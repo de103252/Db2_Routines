@@ -60,9 +60,9 @@ select value
   from table(generate_series(1, 5));
   
 select value
-  from table(generate_series(0, 15, 5));
+  from table(generate_series(1, 9, 3));
 
-select value
+select value as countdown
   from table(generate_series(10, 0, -1));
   
 select current date + (6 - dayofweek_iso(current date) + value) days

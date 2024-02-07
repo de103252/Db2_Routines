@@ -1,0 +1,9 @@
+#Tue Sep 19 15:55:00 CEST 2023
+generateSchema=false
+ConnectionName=DALLASC
+useridCurrentSchema=false
+currentPath=SYSIBM,SYSFUN,SYSPROC,ADCDMST
+currentSchema=ADCDMST
+buildOwner=
+packageOwner=
+ProjectAnnotation=DALLASC\:jdbc\:db2\://newg\:5040/DALLASC\:retrieveMessagesFromServerOnGetMessage\=true;emulateParameterMetaDataForZCalls\=1;

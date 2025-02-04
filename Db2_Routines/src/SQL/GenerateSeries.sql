@@ -1,3 +1,9 @@
+-- Following comment lines tell Data Studio resp. SPUFI
+-- to use # as statement terminator
+--
+--<ScriptOptions statementTerminator="#"/>
+--#SET TERMINATOR #
+
 /*
 Generates a series of integer values in the given interval
 from start to stop with the given step. Both start and stop
@@ -65,6 +71,11 @@ select value
 select value as countdown
   from table(generate_series(10, 0, -1));
   
-select current date + (6 - dayofweek_iso(current date) + value) days
-  from table(generate_series(0, 2*7, 7));
+-- Next 4 Saturdays
+select current date + (6 - dayofweek_iso(current date) + value) days as Saturday
+  from table(generate_series(0, 3*7, 7));
+  
+-- 42 random integers in the range [0, 100)
+select integer(rand() * 100)
+  from table(generate_series(1, 42));
   

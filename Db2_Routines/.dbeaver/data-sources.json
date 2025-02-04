@@ -1,0 +1,49 @@
+{
+	"folders": {},
+	"connections": {
+		"db2_zos-194b1f9b248-63acadbec3d2a938": {
+			"provider": "db2_zos",
+			"driver": "db2_zos",
+			"name": "DALLASD",
+			"save-password": true,
+			"configuration": {
+				"host": "newg",
+				"port": "5045",
+				"database": "DALLASD",
+				"url": "jdbc:db2://newg:5045/DALLASD",
+				"configurationType": "MANUAL",
+				"type": "dev",
+				"closeIdleConnection": true,
+				"auth-model": "native"
+			},
+			"custom-properties": {
+				"SQLEditor.clearOutputBeforeExecute": "true",
+				"SQLEditor.maxEditorOnScriptExecute": "false",
+				"SQLEditor.refreshDefaultsAfterExecute": "false",
+				"SQLEditor.setSelectionToStatisticsTab": "true",
+				"SQLEditor.showStatisticsForQueriesWithResults": "NEVER",
+				"script.commit.lines": "1",
+				"script.commit.type": "AT_END",
+				"script.fetch.resultset": "false",
+				"script.sql.delimiter": "#",
+				"script.sql.ignoreNativeDelimiter": "true"
+			}
+		}
+	},
+	"connection-types": {
+		"dev": {
+			"name": "Development",
+			"color": "255,255,255",
+			"description": "Regular development database",
+			"auto-commit": true,
+			"confirm-execute": false,
+			"confirm-data-change": false,
+			"smart-commit": false,
+			"smart-commit-recover": true,
+			"auto-close-transactions": true,
+			"close-transactions-period": 1800,
+			"auto-close-connections": true,
+			"close-connections-period": 14400
+		}
+	}
+}

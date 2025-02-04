@@ -4,11 +4,14 @@
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
--- drop function easter(year integer)#
-
 -- Returns the date of Easter Sunday in the given year, which must be
 -- a year after the Gregorian calendar reform (>= 1583).
-create function easter(year integer)
+-- Calculation is done using the Meeus/Jones/Butcher algorithm
+-- (http://en.wikipedia.org/wiki/Computus#Meeus.2FJones.2FButcher_Gregorian_algorithm)
+
+-- drop function sysfun.easter(year integer)#
+
+create function sysfun.easter(year integer)
   returns date
   language sql
   deterministic
@@ -17,7 +20,7 @@ begin
   declare n, o decimal(2);
 
   if year <= 1582 then
-    signal sqlstate '70815' 
+    signal sqlstate '71583' 
       set message_text = 
         'Only years in Gregorian calendar (1583 and later) allowed';
   end if;
@@ -41,14 +44,18 @@ begin
 end
 #
 
-select current date as today, easter(year(current date)) as easter
+-- When was Easter this year?
+select easter(year(current date)) as easter
   from sysibm.sysdummyu
 #
 
+-- Show Easter Sundays between 2000 and 2050.
+-- This uses the generate_series function defined next door.
 select easter(value) as "Easter Sunday"
   from table(generate_series(2000, 2050))
 #
 
+-- Years before 1583 not allowed, will raise an SQL error.
 select easter(1582) from sysibm.sysdummyu
 #
 

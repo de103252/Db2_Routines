@@ -84,6 +84,18 @@
  *
  * Where load.lib is a load library in the WLM address space's STEPLIB
  * concatenation.
+ * 
+ * In z/OS batch, compile like this:
+ *
+ * //COMPILE    EXEC  EDCXCB,
+ * //  CPARM='OPTFILE(DD:CCOPTS)',
+ * //  OUTFILE='DSNC10.DBCG.RUNLIB.LOAD(RDGENFIL),DISP=SHR'
+ * //SYSPRINT   DD    SYSOUT=*
+ * //CCOPTS     DD    *
+ * XPLINK
+ * LOCALE(En_US.IBM-1047)
+ * SEARCH('DSNC10.SDSNC.H')
+ * //SYSIN DD *
  *
  *********************************************************************/
 
@@ -215,10 +227,12 @@ buflen_ok(int offset,
 static bool
 is_numeric(unsigned char *data, size_t datalen) {
   int i;
+  // Check all but last byte; each nibble must be 0..9
   for (i = 0; i < datalen - 1; i++) {
     if ((data[i] & 0xF0) > 0x90) return false;
     if ((data[i] & 0x0F) > 0x09) return false;
   }
+  // Upper nibble of last byte must be 0..0; lower nibble (sign) must be A..F
   if ((data[i] & 0xF0) > 0x90) return false;
   if ((data[i] & 0x0F) < 0x0A) return false;
   return true;

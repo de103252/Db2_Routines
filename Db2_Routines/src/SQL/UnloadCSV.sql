@@ -19,7 +19,8 @@ begin
   
   set utilid = 'UCSV' || varchar_format(current timestamp, 'YYMMDDHH24MISS');
   
-  set utstmt = 'TEMPLATE CSVFILE PATH ' || path_name
+  set utstmt = 'TEMPLATE CSVFILE PATH ' || path_name 
+      || ' FILEDATA RECORD'
       || ' UNLOAD DATA FROM TABLE ' || table_name
       || ' UNLDDN CSVFILE'
       || ' UNICODE'
@@ -43,5 +44,5 @@ end
 
 select unloadcsv('ADCDMST.EMP', '/u/adcdmst/emp.txt') 
   from sysibm.sysdummyu#
-select xmlserialize(xmlagg(xmltext(substr(text, 2) || x'0a')) as clob) from sysibm.sysprint#
+
   

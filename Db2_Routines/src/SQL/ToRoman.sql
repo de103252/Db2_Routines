@@ -1,6 +1,4 @@
--- Following comment lines tell Data Studio resp. SPUFI
--- to use # as statement terminator
---
+
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
@@ -17,9 +15,10 @@ returns varchar(20)
 begin
   declare roman varchar(20) default '';
  
-  if number not between 1 and 3999 then
-    signal sqlstate '76543' set message_text =
-      'Can only convert positive integers up to 3999 to Roman numerals';
+  -- Check allowed range
+  if number not between 1 and 9999 then
+    signal sqlstate '77753' set message_text =
+      'Can only convert positive integers up to 9999 to Roman numerals';
   end if;
   
   while number > 0 do 
@@ -58,3 +57,8 @@ select to_roman(year(current date)) as current_year_roman
   from sysibm.sysdummyu;
   
 select to_roman(1964) from sysibm.sysdummyu;
+select to_roman(9999) from sysibm.sysdummyu;
+
+select to_roman(value) "In saecula saeculorum"
+  from table(generate_series(year(current date), 
+                             year(current date) + 99))

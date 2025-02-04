@@ -1,21 +1,28 @@
+-- Following comment lines tell Data Studio resp. SPUFI
+-- to use # as statement terminator
+--
 --<ScriptOptions statementTerminator="#"/>
+--#SET TERMINATOR #
 
 -- drop function sysfun.submit(jcl clob ccsid unicode)#
 
--- Submit JCL, wait for job termination, and return the job output.
+/*
+Submits a JCL stream, waits for job termination, and returns
+the job output.
+*/
 create function sysfun.submit(jcl clob ccsid unicode)
   returns clob
   external action
   modifies sql data
   called on null input
 begin
-  declare jobid char(8);
-  declare rc integer;
+  declare jobid  char(8);
+  declare rc     integer;
   declare status integer;
   declare append smallint;
   declare maxrc, comptype, sysabcode, userabcode integer default 0;
   declare message varchar(1331);
-  declare output clob ccsid unicode default '';
+  declare output  clob ccsid unicode default '';
 
   -- Split the JCL text into lines and insert these into the
   -- SYSIBM.JOB_JCL temporary table. Then call ADMIN_JOB_SUBMIT.
@@ -75,6 +82,8 @@ begin
 end
 #
 
+-- Submit JCL, wait for job termination, and return the job output
+-- as a table.
 drop function sysfun.submit_t(jcl clob ccsid unicode)#
 create function sysfun.submit_t(jcl clob ccsid unicode)
   returns table(rownum integer, text varchar(4096))
@@ -87,7 +96,7 @@ begin atomic
       from xmltable('tokenize(., "[\r\n]{1,2}")'
                     passing xmltext(submit(jcl))
                     columns rownum for ordinality, 
-                            text   char(80) path '.');
+                            text   varchar(4096) path '.');
 end#
 
 

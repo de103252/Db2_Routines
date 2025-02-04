@@ -1,4 +1,18 @@
+-- Following comment lines tell Data Studio resp. SPUFI
+-- to use # as statement terminator
+--
 --<ScriptOptions statementTerminator="#"/>
+--#SET TERMINATOR #
+
+/*
+The TRY_xxx functions try to convert the string value passed
+to an integer type. The conversion is tried in the same way
+as the respective built-in function and follows the same rules.
+Leading and trailing blanks are therefore permitted.
+If the string cannot be converted to the
+target type, NULL is returned and an SQL warning
+(SQLSTATE 02018) is raised.
+*/
 
 drop function sysfun.try_integer(str varchar(32704))#
 drop function sysfun.try_smallint(str varchar(32704))#
@@ -58,22 +72,32 @@ begin
 end
 #
 
-with values(v) as (
-  select '' from sysibm.sysdummyu union all
-  select '  42   ' from sysibm.sysdummyu union all
-  select 'aa42bb' from sysibm.sysdummyu union all
-  select '  42a' from sysibm.sysdummyu union all
-  select '  42a' from sysibm.sysdummyu union all
-  select '  42a' from sysibm.sysdummyu union all
-  select '  -9223372036854775808' from sysibm.sysdummyu union all
-  select '  9223372036854775807' from sysibm.sysdummyu union all
-  select '  9223372036854775808 ' from sysibm.sysdummyu union all
-  select '  -9223372036854775809' from sysibm.sysdummyu
+with
+u(null_s, null_i, null_b) as (
+  select cast(null as smallint)
+       , cast(null as integer)
+       , cast(null as bigint)
+    from sysibm.sysdummyu
+),
+values(v, es, ei, eb) as (
+            select '',                       null_s, null_i, null_b               from u
+  union all select '  42   ',                42,     42,     42                   from u
+  union all select 'aa42bb',                 null_s, null_i, null_b               from u
+  union all select '  42a',                  null_s, null_i, null_b               from u
+  union all select '  42a',                  null_s, null_i, null_b               from u
+  union all select '  42a',                  null_s, null_i, null_b               from u
+  union all select '  -9223372036854775808', null_s, null_i, -9223372036854775808 from u
+  union all select '  9223372036854775807',  null_s, null_i, 9223372036854775807  from u
+  union all select '  9223372036854775808 ', null_s, null_i, null_b               from u
+  union all select '  -9223372036854775809', null_s, null_i, null_b               from u
+),
+results as (
+select v.*, try_smallint(v) as, try_integer(v) ai, try_bigint(v) ab
+  from values v
 )
-select v, 
-       try_integer(v)   as try_integer, 
-       try_smallint(v)  as try_smallint,
-       try_bigint(v)    as try_bigint
-  from values
+select *
+  from results
+ where as is distinct from es
+    or ai is distinct from ei
+    or ab is distinct from eb
 #
-

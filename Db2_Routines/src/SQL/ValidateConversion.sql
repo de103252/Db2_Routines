@@ -65,7 +65,7 @@ begin
   
   -- If we reach this point, no exit handler has been activated, 
   -- meaning that the type conversion was successful.
-  return d;
+  return r;
 end
 #
 
@@ -74,20 +74,33 @@ d(d) as (
   select 1 from sysibm.sysdummyu
 ),
 tests(value, type, expected_result) as (
-            select '42', 'integer',  1 from d 
-  union all select '42', 'smallint', 1 from d 
-  union all select '42', 'bigint',   1 from d 
-  union all select '42', 'smallint', 1 from d
-  union all select '  42  ', 'smallint', 1 from d
-  union all select 'junk', 'integer', 0 from d
-  union all select '2147483647', 'integer', 1 from d
-  union all select '2147483648', 'integer', 0 from d
-  union all select '2024-01-09', 'date', 1 from d
-  union all select '2024-02-30', 'date', 0 from d
-  union all select '2024.98765', 'decfloat', 1 from d
+            select '42',         'integer',       1 from d 
+  union all select '42',         'smallint',      1 from d 
+  union all select '42',         'bigint',        1 from d 
+  union all select '42',         'smallint',      1 from d 
+  union all select '  42  ',     'smallint',      1 from d  -- leading and trailing blanks ok
+  union all select 'junk',       'integer',       0 from d  -- complete junk not ok
+  union all select '2147483647', 'integer',       1 from d  -- within range 
+  union all select '2147483648', 'integer',       0 from d  -- not within range
+  union all select '-2147483648', 'integer',      0 from d  -- within range
+  union all select '2024-01-09', 'date',          1 from d 
+  union all select '1.9.2024',   'date',          1 from d 
+  union all select '2024-02-30', 'date',          0 from d  -- No February 30 
+  union all select '29.2.2024',  'date',          1 from d  -- Leap year, European date format 
+  union all select '29.2.2023',  'date',          0 from d  -- Not a leap year
+  union all select '47.11',      'decimal(4, 2)', 1 from d  -- Precision and scale ok
+  union all select '-47.11',     'decimal(4, 2)', 1 from d  -- Negative ok
+  union all select '47.11',      'decimal(3, 2)', 0 from d  -- Insufficient precision 
+  union all select '47.11',      'decimal(3, 1)', 1 from d  -- With truncation of scale, precision now ok 
+  union all select '2024.98765', 'decfloat',      1 from d 
+  union all select '2024-01-25 16:15:14.12345+01:00',
+                   'timestamp(0) with timezone',  1 from d
+  union all select cast(null as char), 'integer', 1 from d  -- Nulls ok                                  
 ),
-results(value, type, expected_result, actual_result) as (
-  select tests.*, validate_conversion(value, type)
+results as (
+  select row_number() over() as row
+       , tests.*
+       , validate_conversion(value, type) actual_result
     from tests
 )
 select *
@@ -95,17 +108,6 @@ select *
  where expected_result <> actual_result
 #
 
-
-select validate_conversion('2024-01-25', 'date') as result
-  from sysibm.sysdummyu#
-  
-select validate_conversion('2024-01-25 16:15:14.12345+01:00', 'timestamp(0) with timezone') as result
-  from sysibm.sysdummyu#
-  
-select current timestamp with timezone from sysibm.sysdummyu#
-
-select validate_conversion(cast(null as char), 'integer') as result
-  from sysibm.sysdummyu#
-  
+-- This is going to fail  
 select validate_conversion(cast(null as char), 'bullshit') as result
   from sysibm.sysdummyu#

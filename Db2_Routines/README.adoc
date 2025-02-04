@@ -6,23 +6,25 @@ but are not.
 [width="100%",cols="40%,15%,15%,15%,15%",options="header",]
 |===
 |Function |Type |Category |Description |Implemented in
-|BASE64DECODE |S |Data types |Decodes BASE64 format to binary data |Java
-|BASE64ENCODE |S |Data types |Encodes binary data to BASE64 format |Java
-|EASTER |S |Date and time |Calculates the date of Easter for a given year |SQL
-|HEXTOINT |S |Data types |Converts a hex string to int |SQL
-|REGEX_MATCHES |S |Strings |Matches a regular expression against a string |Java
+|<<BASE64DECODE>> |S |Data types |Decodes BASE64 format to binary data |Java
+|<<BASE64ENCODE>> |S |Data types |Encodes binary data to BASE64 format |Java
+|<<CROSSLOAD>> |S |Utilities |Copies data from one table to another |SQL
+|<<EASTER>> |S |Date and time |Calculates the date of Easter for a given year |SQL
+|<<HEXTOINT>> |S |Data types |Converts a hex string to int |SQL
+|<<REGEX_MATCHES>> |S |Strings |Matches a regular expression against a string |Java or SQL
 |REGEX_REPLACE |S |Strings |Replaces regular expression matches within a string |Java
-|RUNSTATS |S |Utilities |Runs statistics against a table or a set of tables |SQL
+|<<RUNSTATS>> |S |Utilities |Runs statistics against a table or a set of tables |SQL
 |SPLIT |T |Text |Tokenizes a comma-separated string (inverse of LISTAGG)|SQL
-|SUBMIT |S |Utilities |Submits a JCL job stream and returns the job output as a CLOB|SQL
-|SUBMIT_T |T |Utilities |Submits a JCL job stream and returns the job output as a table|SQL
-|TRY_INTEGER, TRY_SMALLINT, TRY_BIGINT |S |Data types |Returns text converted to an integer or NULL on failure. |SQL
-|GENERATE_SERIES |T |Numbers |Generate a series of values between a start and an end value, with an optional step. |SQL
+|<<SUBMIT>> |S |Utilities |Submits a JCL job stream and returns the job output as a CLOB|SQL
+|<<SUBMIT_T>> |T |Utilities |Submits a JCL job stream and returns the job output as a table|SQL
+|xref::try_integer[TRY_INTEGER, TRY_SMALLINT, TRY_BIGINT] |S |Data types |Returns text converted to an integer or NULL on failure. |SQL
+|<<GENERATE_SERIES>> |T |Numbers |Generate a series of values between a start and an end value, with an optional step. |SQL
 |FORMATTIMESTAMP |S |Date and time |Locale-sensitive formatting of a timestamp value |Java
-|TO_ROMAN |S |Numbers |Converts a small integer to a Roman numeral. |SQL
-|APFLIST |T |System |Returns a table with all APF authorized data sets on the system. |COBOL
-|RACFPROFILE |S |System |Returns the RACF profile that covers the input data set name. |COBOL
-|READ_GENERIC_FILE |G |System |Reads records from a flat file and returns them as a table. |C
+|<<TO_ROMAN>> |S |Numbers |Converts a small integer to a Roman numeral. |SQL
+|<<APFLIST>>           |T |System |Returns a table with all APF authorized data sets on the system. |COBOL
+|RACFPROFILE       |S |System |Returns the RACF profile that covers the input data set name. |COBOL
+|<<READ_GENERIC_FILE>> |T |System |Reads records from a flat file and returns them as a table. |C
+|<<VALIDATE_CONVERSION>>|T |Data types|Tests whether a given character string can be converted to a specified target type. |SQL
 |===
 
 == READ_GENERIC_FILE
@@ -172,7 +174,7 @@ select current date as today, easter(year(current date)) as easter
 select easter(1582) from sysibm.sysdummyu;
 ....
 
-Using the link:#GENERATE_SERIES[GENERATE_SERIES] function, we can find
+Using the <<GENERATE_SERIES>> function, we can find
 out the Easter dates for the next 50 years:
 
 ....
@@ -274,25 +276,28 @@ APFLIST(_format-string_, PACK(CCSID 1208, _arg1_, _arg2_, ...))
 === TO_ROMAN
 
 This extremely useful UDF converts a small integer to a roman numeral.
-Only values in the range [1..3999] are allowed.
+Only values in the range [1..9999] are allowed.
 
 [subs="quotes"]
 ----
-to_roman(_number_)
+TO_ROMAN(_number_)
 ----
 
-number:: The number to be converted. It must be a small integer in the range 1 to 3999.
+number:: The number to be converted. It must be a small integer in the range 1 to 9999.
 
-The function returns a character string that is the roman numeral representaton of
+The function returns a character string that is the roman numeral representation of
 the given number, in classical subtractive notation. That is, 40 is represented as IX,
 900 as CM, etc.
 
+If the number is outside the allowed range, SQLSTATE 77753 is raised.
+
 .Example:
-....
+[source,sql]
+----
 select to_roman(year(current date))
     as current_year_roman
   from sysibm.sysdummyu;
-....
+----
 
 .Result:
 ....
@@ -305,16 +310,16 @@ select to_roman(year(current date))
 
 Generates a series of integer values in the given interval.
 
+[source,sql]
+----
+GENERATE_SERIES(start, stop)
+----
 
 [source,sql]
 ----
 GENERATE_SERIES(start, stop, step)
 ----
 
-[source,sql]
-----
-GENERATE_SERIES(start, stop)
-----
 
 The GENERATE_SERIES function generates a series of integer values in the given interval 
 from _start_ to _stop_, with an optional _step_. Both _start_ and _stop_ are inclusive; _step_, if
@@ -396,4 +401,24 @@ The function returns a character string.
 This function allows formatting of multiple values of different data types in a more concise
 way than manual formatting using the capabilities of standard SQL.
 
+[[:try_integer]]
+=== TRY_INTEGER, TRY_SMALLINT, TRY_BIGINT
 
+The TRY_xxx functions try to convert the string value passed to an integer type. The conversion is performed in the same way as the respective built-in function and follows the same rules. Leading and trailing blanks are therefore permitted.
+
+The difference to the built-in functions is the behavior when the input string is not a valid string representation of an integer type, or if the integer value is out of range for the target type. In this case, NULL is returned and an SQL warning (SQLSTATE 02018) is raised.
+
+=== HEXTOINT
+
+The HEXTOINT function converts the hexadecimal string representation of a number to the numeric value. It can be considered the inverse of the HEX function with a BIGINT argument.
+
+The string must not be empty, and must contain upper-case or lower-case hex digits only (0..9, A..F, a..f); otherwise, SQLSTATE 72606 is raised. 
+
+The hex string must represent a number within the range of a BIGINT, otherwise, an overflow condition is raised (SQLSTATE 22003).
+
+[subs="quotes"]
+----
+HEXTOINT(_hexstring_)
+----
+
+hexstring:: A non-empty character string containing the valid hexadecimal representation of a number in BIGINT range.

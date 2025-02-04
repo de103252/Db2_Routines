@@ -44,4 +44,4 @@ asutime no limit
 not secured 
 deterministic;
 
-select regex_matches('araz', '.*r.{1,3') from sysibm.sysdummyu;
+select regex_matches('araz', '.*r.{1,3}') from sysibm.sysdummyu;

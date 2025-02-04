@@ -1,21 +1,26 @@
--- Following comment lines tell Data Studio resp. SPUFI
--- to use # as statement terminator
---
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
- 
+/*
+Runs the RUNSTATS utility against the specified set of 
+tables or tablespaces.
+*/
     
 drop    function runstats(what varchar(16),
                          schema_pattern varchar(1024), 
-                         table_name_pattern varchar(1024),
+                         name_pattern varchar(1024),
                          statement varchar(16384))#
 
+/*
+Arguments:
+WHAT -- Either 'TABLES' or 'DATABASE'
+SCHEMA_PATTERN -- e
+*/
 create function runstats(what varchar(16),
                          schema_pattern varchar(1024), 
-                         table_name_pattern varchar(1024),
+                         name_pattern varchar(1024),
                          statement varchar(16384))
-  returns integer
+  returns clob -- or integer, if interested only in the return code
   language sql
   not deterministic
   modifies sql data
@@ -30,21 +35,26 @@ begin
   case upper(what)
   when 'TABLES' then
   select 'LISTDEF RSLIST ' 
-          || xmlserialize(xmlagg(xmltext(' INCLUDE TABLE ' || trim(creator) || '.' || name)) as clob) 
+          || xmlserialize(xmlagg(
+                             xmltext(' INCLUDE TABLE ' || 
+                                     trim(creator) || 
+                                     '."' || 
+                                     name || '"')) 
+                          as clob) 
           || ' RUNSTATS TABLESPACE LIST RSLIST TABLE'
           || coalesce(nullif(statement, ''), ' USE PROFILE SORTDEVT SYSALLDA')
     into utstmt
     from sysibm.systables
    where creator like schema_pattern
      and type = 'T'
-     and (nullif(table_name_pattern, '') is null
-          or name like table_name_pattern);
+     and (nullif(name_pattern, '') is null
+          or name like name_pattern);
   when 'DATABASE' then
   select 'LISTDEF RSLIST ' || 
-         case when nullif(table_name_pattern, '') is null then
+         case when nullif(name_pattern, '') is null then
          'INCLUDE TABLESPACES DATABASE ' || schema_pattern
          else
-         'INCLUDE ' || schema_pattern || '.' || table_name_pattern
+         'INCLUDE ' || schema_pattern || '.' || name_pattern
          end ||
          ' RUNSTATS TABLESPACE LIST RSLIST TABLE'
           || coalesce(nullif(statement, ''), ' USE PROFILE SORTDEVT SYSALLDA')
@@ -59,23 +69,23 @@ begin
   end case;
   call sysproc.dsnutilv(utilid, 'NO', utstmt, retcode);
 
-  /*  
+  if retcode > 4 then
+    signal sqlstate '77777'       
+       set message_text = 
+        'DSNUTILV return code =' || retcode;
+  end if;
+  
   for select text from sysibm.sysprint order by seqno do
     set sysprint = sysprint || substr(text, 2) || x'0a';
   end for;
-  return sysprint;
-  */
-  
-  return retcode;
-
+  return sysprint; -- or retcode
 end
 #
 
-with result(text) as (select runstats('ADCDMST', cast(null as char)) from sysibm.sysdummyu)
-select text, hex(varchar(text, 16000)) from result
+select runstats('DATABASE', 'DSN8D13L', '', '') 
+  from sysibm.sysdummyu
 #
-
-select runstats('database', 'DSN8D13L', '', '') from sysibm.sysdummyu#
 select substr(text, 2) from sysibm.sysprint#
 
 #
+

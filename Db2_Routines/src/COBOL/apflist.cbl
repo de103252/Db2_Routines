@@ -10,14 +10,21 @@
       *
       * In Db2, declare the function as follows:
       *
+      * drop function apflist();
       * create function apflist()
-      * returns table(dsname varchar(44), volume varchar(6))
+      * returns table(seqid  integer,
+      *               dsname varchar(44),
+      *               volume varchar(6))
       * language cobol
       * parameter style sql
       * parameter ccsid ebcdic
       * scratchpad
       * security user
       * external name apflist
+      * program type main
+      * -- continue after failure
+      * -- run options 'TEST(,,,TCPIP&192.168.160.1%8002:*)'
+      * ;
       ******************************************************************
        Program-Id. Apflist.
        Data Division.
@@ -152,6 +159,7 @@
            *> or the end of the list has been reached.
            Perform Until Udf-Sqlstate = '00000'
                       Or Address Of Apfentry = Sp-Last-Apfentry-Ptr
+              Display "155"
               If Apfdsn(1:1) Not = Low-Values Then
                  *> Found a valid entry.
                  Move '00000' To Udf-Sqlstate  *> Indicate success

@@ -42,7 +42,24 @@ begin
 end
 #
 
-select unloadcsv('ADCDMST.EMP', '/u/adcdmst/emp.txt') 
-  from sysibm.sysdummyu#
+drop function unload_csv(statement varchar(32704), filename varchar(1024), format varchar(256)); 
+create function unload_csv(statement varchar(32704), filename varchar(1024), format varchar(256)) 
+returns bigint
+external name
+  'ADCDMST.ROUTINES:com.ibm.db2.csv.Unload.unload'
+language java 
+parameter style java 
+no external action 
+allow parallel 
+wlm environment DBDGENVJ 
+asutime no limit 
+not secured 
+deterministic; 
+
+select unload_csv('seclect * from DSN81310.EMP', '/u/adcdmst/emp.txt', 'Default') 
+  from sysibm.sysdummyu
+#
+
+select * from sysibm.sysjarobjects
 
   

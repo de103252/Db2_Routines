@@ -1,8 +1,5 @@
 --<ScriptOptions statementTerminator="#"/>
 
-drop procedure deploy_jar
-#
-
 create procedure deploy_jar(jar     blob(1M), 
                             jarname varchar(257))
   called on null input                            
@@ -27,14 +24,14 @@ begin
            where (jo.jarschema, jo.jar_id) = (jarschema, jar_id)) 
          is not null
   then
-    -- Replace the Jar and refresh the Java WLM environment
+    -- Replace the Jar and refresh all Java WLM environments
     call SQLJ.DB2_REPLACE_JAR(jar, jarname);
-    select distinct wlm_environment
-      into wlmenv
-      from sysibm.sysroutines 
-     where language = 'JAVA'
-     fetch first row only;
-    call sysproc.wlm_refresh(wlmenv, null, status, rc);  
+    for select distinct wlm_environment
+          from sysibm.sysroutines 
+         where language = 'JAVA'
+    do 
+      call sysproc.wlm_refresh(wlm_environment, null, status, rc);
+    end for;  
   else
     -- Install the Jar
     call SQLJ.DB2_INSTALL_JAR(jar, jarname, 0);
@@ -45,12 +42,10 @@ end
 #
 
 
-select deploy_jar(?, 'BASE64')
+select deploy_jar(cast(? as blob(1M)), 'ROUTINES')
   from sysibm.sysdummyu
 #
 
 select *
   from sysibm.sysjarobjects
 #
-
-select distinct wlm_environment from sysibm.sysroutines where language = 'JAVA'

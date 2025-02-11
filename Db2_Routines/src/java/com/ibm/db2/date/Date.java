@@ -7,8 +7,6 @@ import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
-import com.ibm.db2.jcc.DBTimestamp;
-
 public class Date {
     public static String format3(Timestamp ts, String pattern, String locale) throws SQLException {
         try {
@@ -26,9 +24,9 @@ public class Date {
         }
     }
 
-    public static DBTimestamp parse(String tsString, String pattern) {
+    public static Timestamp parse(String tsString, String pattern) {
         try {
-            return new DBTimestamp(new SimpleDateFormat(pattern).parse(tsString).getTime());
+            return new Timestamp(new SimpleDateFormat(pattern).parse(tsString).getTime());
         } catch (ParseException e) {
             return null;
         }

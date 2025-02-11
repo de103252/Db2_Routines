@@ -1,1 +1,1 @@
-{"resources":{"src/SQL/CrossLoad.sql":{"default-datasource":"db2_zos-194b1f9b248-63acadbec3d2a938","default-schema":"ADCDMST"},"src/SQL/ToRoman.sql":{"default-schema":"ADCDMST","default-datasource":"db2_zos-194b1eef4e7-7d911e52f5c96634"}}}
+{"resources":{"src/SQL/ToRoman.sql":{"default-schema":"ADCDMST","default-datasource":"db2_zos-194b1eef4e7-7d911e52f5c96634"}}}

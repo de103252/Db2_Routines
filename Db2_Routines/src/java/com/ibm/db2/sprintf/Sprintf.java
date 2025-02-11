@@ -7,12 +7,9 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.GregorianCalendar;
-import java.util.IllegalFormatConversionException;
 import java.util.Locale;
-import java.util.SimpleTimeZone;
-
-import com.ibm.db2.jcc.DBTimestamp;
 
 public class Sprintf {
 
@@ -41,11 +38,11 @@ public class Sprintf {
 			long fraction = readPackedLong((p + 1) / 2);
 			while (p++ < 12)
 				fraction *= 10;
-			DBTimestamp dbTimestamp = new DBTimestamp(c.getTimeInMillis()); // instant.plusNanos(fraction).;
-			dbTimestamp.setPicos(fraction);
+			Timestamp dbTimestamp = new Timestamp(c.getTimeInMillis()); // instant.plusNanos(fraction).;
+			// dbTimestamp.setPicos(fraction);
 			if (withTimezone) {
 				int offset = readShort();
-				dbTimestamp.setTimeZone(new SimpleTimeZone(offset, "dummy"));
+				//dbTimestamp.setTimeZone(new SimpleTimeZone(offset, "dummy"));
 			}
 			return dbTimestamp;
 		}

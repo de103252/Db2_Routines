@@ -3,17 +3,18 @@
 -- Unfortunately, as there is no way to "escape" commas,
 -- the input tokens cannot contain any.
 
-drop function sysfun.split(input varchar(32704));
-drop function sysfun.split(input clob);
 
+drop function sysfun.split(input varchar(32704));
 create function sysfun.split(input varchar(32704))
 returns table (seqno integer, token varchar(32704))
 return
-select seqno, token
-  from xmltable('fn:tokenize(., ",")' passing xmltext(input)
+select seqno, replace(token, ux'241e', ',')
+  from xmltable('fn:tokenize(., ",")' 
+                passing xmltext(replace(input, '\,', ux'241e'))
              columns seqno for ordinality
                    , token varchar(32704) path '.');
 
+drop function sysfun.split(input clob);
 create function sysfun.split(input clob)
 returns table (seqno integer, token varchar(32704))
 return
@@ -61,7 +62,7 @@ select seqno, token
 #
 
 select *
-  from table(split('a;b;c', ';'))
+  from table(split('a,b,c;d\,efg'))
 #
   
 select * from xmltable('text()' passing tokenize('foo;bar; baz', '; *'))              

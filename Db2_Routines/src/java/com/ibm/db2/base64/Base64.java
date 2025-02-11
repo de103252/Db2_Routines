@@ -25,10 +25,11 @@ import java.util.Base64.Encoder;
  * If unqualified, Db2 qualifies it with the current SQLID ("ADCDMST" in the
  * example DDL below).
  * 
- * Create the UDFs by running the following DDL. 
- * Replace 'DBCGWLMJ' with the name of the WLM environment for Java routines. 
- * Replace 'ADCDMST.BASE64' with the qualified Jar name.
+ * Create the UDFs by running the following DDL. Replace 'DBCGWLMJ' with the
+ * name of the WLM environment for Java routines. Replace 'ADCDMST.BASE64' with
+ * the qualified Jar name.
  * <p/>
+ * 
  * <pre>
  * create function base64encode(data blob(64M)) 
  * returns clob(64M) ccsid unicode
@@ -57,10 +58,8 @@ import java.util.Base64.Encoder;
  * deterministic;
  * </code>
  * 
- * To run the UDFs, simply write a SELECT statement such as
- * <code></code> 
- * SELECT base64encode(cast('Uli Seelbach' as blob)) from sysibm.sysdummyu;
- * </code>
+ * To run the UDFs, simply write a SELECT statement such as <code></code> SELECT
+ * base64encode(cast('Uli Seelbach' as blob)) from sysibm.sysdummyu; </code>
  * 
  * <code>
  * SELECT base64decode('VWxpIFNlZWxiYWNo') from sysibm.sysdummyu;
@@ -70,64 +69,72 @@ import java.util.Base64.Encoder;
  *
  */
 public class Base64 {
-    public static ByteArrayInputStream decode3(Clob data) throws SQLException, IOException {
-        try (Connection conn = getConnection()) {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            Decoder decoder = java.util.Base64.getDecoder();
-            InputStream lobStream = data.getAsciiStream();
-            try (InputStream is = decoder.wrap(lobStream)) {
-                copy(is, os);
-            } finally {
-                lobStream.close();
-            }
-            return new ByteArrayInputStream(os.toByteArray());
-        }
-    }
+	public static ByteArrayInputStream decode3(Clob data) throws SQLException, IOException {
+		try (Connection conn = getConnection()) {
+			ByteArrayOutputStream os = new ByteArrayOutputStream();
+			Decoder decoder = java.util.Base64.getDecoder();
+			InputStream lobStream = data.getAsciiStream();
+			try (InputStream is = decoder.wrap(lobStream)) {
+				copy(is, os);
+			} finally {
+				lobStream.close();
+			}
+			return new ByteArrayInputStream(os.toByteArray());
+		}
+	}
 
-    public static Blob decode(Clob data) throws SQLException, IOException {
-        try (Connection conn = getConnection()) {
-            Decoder decoder = java.util.Base64.getDecoder();
-            Blob decodedData = conn.createBlob();
-            try (InputStream is = decoder.wrap(data.getAsciiStream());
-                 OutputStream os = new BufferedOutputStream(decodedData.setBinaryStream(1))) {
-                copy(is, os);
-            }
-            return decodedData;
-        }
-    }
+	public static Blob decode(Clob data) throws SQLException, IOException {
+		try (Connection conn = getConnection()) {
+			Decoder decoder = java.util.Base64.getDecoder();
+			Blob decodedData = conn.createBlob();
+			try (InputStream is = decoder.wrap(data.getAsciiStream());
+					OutputStream os = new BufferedOutputStream(decodedData.setBinaryStream(1))) {
+				copy(is, os);
+			}
+			return decodedData;
+		}
+	}
 
-    public static String encode3(Blob data) throws SQLException, IOException {
-        try (Connection conn = getConnection()) {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            Encoder encoder = java.util.Base64.getEncoder();
-            try (InputStream is = new BufferedInputStream(data.getBinaryStream())) {
-                copy(is, encoder.wrap(os));
-            }
-            return new String(os.toByteArray(), "UTF8");
-        }
-    }
+	public static byte[] decode(String data) {
+		return java.util.Base64.getDecoder().decode(data);
+	}
 
-    public static Clob encode(Blob data) throws SQLException, IOException {
-        try (Connection conn = getConnection()) {
-            Encoder encoder = java.util.Base64.getEncoder();
-            Clob encodedData = conn.createClob();
-            try (InputStream is = new BufferedInputStream(data.getBinaryStream());
-                 OutputStream os = encoder.wrap(encodedData.setAsciiStream(1))) {
-                copy(is, os);
-            }
-            return encodedData;
-        }
-    }
+	public static String encode3(Blob data) throws SQLException, IOException {
+		try (Connection conn = getConnection()) {
+			ByteArrayOutputStream os = new ByteArrayOutputStream();
+			Encoder encoder = java.util.Base64.getEncoder();
+			try (InputStream is = new BufferedInputStream(data.getBinaryStream())) {
+				copy(is, encoder.wrap(os));
+			}
+			return new String(os.toByteArray(), "UTF8");
+		}
+	}
 
-    private static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection("jdbc:default:connection");
-    }
+	public static String encode(byte[] data) {
+		return java.util.Base64.getEncoder().encodeToString(data);
+	}
 
-    private static void copy(InputStream source, OutputStream target) throws IOException {
-        byte[] buf = new byte[8192];
-        int length;
-        while ((length = source.read(buf)) > 0) {
-            target.write(buf, 0, length);
-        }
-    }
+	public static Clob encode(Blob data) throws SQLException, IOException {
+		try (Connection conn = getConnection()) {
+			Encoder encoder = java.util.Base64.getEncoder();
+			Clob encodedData = conn.createClob();
+			try (InputStream is = new BufferedInputStream(data.getBinaryStream());
+					OutputStream os = encoder.wrap(encodedData.setAsciiStream(1))) {
+				copy(is, os);
+			}
+			return encodedData;
+		}
+	}
+
+	private static Connection getConnection() throws SQLException {
+		return DriverManager.getConnection("jdbc:default:connection");
+	}
+
+	private static void copy(InputStream source, OutputStream target) throws IOException {
+		byte[] buf = new byte[8192];
+		int length;
+		while ((length = source.read(buf)) > 0) {
+			target.write(buf, 0, length);
+		}
+	}
 }

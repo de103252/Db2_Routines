@@ -3,27 +3,45 @@
 Several scalar and table functions that I wish were part of Db2 for z/OS
 but are not.
 
+The functions are implemented both as SQL functions and external functions; the external functions, in turn, are written in C, COBOL and Java.
+
+== Installation
+
+The installation of the function differs on the function implementation.
+
+The functions can be installed into an installation-defined schema or into the Db2 standard SYSFUN schema. Installing into SYSFUN has the advantage that you do not need to qualify the function name or set the CURRENT FUNCTION PATH special register; it has the disadvantage of risking incompatibilities if a future version of Db2 defines built-in functions with the same name.
+
+SQL functions can be installed by simply running the supplied DDL.
+
+External functions in a compiled language (C or COBOL) need to be compiled, link-edited and installed in a library that is part of the WLM environment's STEPLIB concatenation.
+
+External functions written in Java can be installed by creating a Jar and placing that Jar either into the CLASSPATH of the Java Virtual Machine running in your Java WLM environment, or by placing the Jar into the Db2 catalog using the SQLJ_DB2_INSTALL_JAR stored procedure. 
+
+== Overview
+
+The following table shows an overview of all functions:
+
 [width="100%",cols="40%,15%,15%,15%,15%",options="header",]
 |===
 |Function |Type |Category |Description |Implemented in
+|<<APFLIST>>           |T |System |Returns a table with all APF authorized data sets on the system. |COBOL
 |<<BASE64DECODE>> |S |Data types |Decodes BASE64 format to binary data |Java
 |<<BASE64ENCODE>> |S |Data types |Encodes binary data to BASE64 format |Java
 |<<CROSSLOAD>> |S |Utilities |Copies data from one table to another |SQL
 |<<EASTER>> |S |Date and time |Calculates the date of Easter for a given year |SQL
+|<<FORMATTIMESTAMP>> |S |Date and time |Locale-sensitive formatting of a timestamp value |Java
+|<<GENERATE_SERIES>> |T |Numbers |Generate a series of values between a start and an end value, with an optional step. |SQL
 |<<HEXTOINT>> |S |Data types |Converts a hex string to int |SQL
+|<<RACFPROFILE>>       |S |System |Returns the RACF profile that covers the input data set name. |COBOL
+|<<READ_GENERIC_FILE>> |T |System |Reads records from a flat file and returns them as a table. |C
 |<<REGEX_MATCHES>> |S |Strings |Matches a regular expression against a string |Java or SQL
-|REGEX_REPLACE |S |Strings |Replaces regular expression matches within a string |Java
+|<<REGEX_REPLACE>> |S |Strings |Replaces regular expression matches within a string |Java
 |<<RUNSTATS>> |S |Utilities |Runs statistics against a table or a set of tables |SQL
-|SPLIT |T |Text |Tokenizes a comma-separated string (inverse of LISTAGG)|SQL
+|<<SPLIT>> |T |Text |Tokenizes a comma-separated string (inverse of LISTAGG)|SQL
 |<<SUBMIT>> |S |Utilities |Submits a JCL job stream and returns the job output as a CLOB|SQL
 |<<SUBMIT_T>> |T |Utilities |Submits a JCL job stream and returns the job output as a table|SQL
-|xref::try_integer[TRY_INTEGER, TRY_SMALLINT, TRY_BIGINT] |S |Data types |Returns text converted to an integer or NULL on failure. |SQL
-|<<GENERATE_SERIES>> |T |Numbers |Generate a series of values between a start and an end value, with an optional step. |SQL
-|FORMATTIMESTAMP |S |Date and time |Locale-sensitive formatting of a timestamp value |Java
 |<<TO_ROMAN>> |S |Numbers |Converts a small integer to a Roman numeral. |SQL
-|<<APFLIST>>           |T |System |Returns a table with all APF authorized data sets on the system. |COBOL
-|RACFPROFILE       |S |System |Returns the RACF profile that covers the input data set name. |COBOL
-|<<READ_GENERIC_FILE>> |T |System |Reads records from a flat file and returns them as a table. |C
+|xref::try_integer[TRY_INTEGER, TRY_SMALLINT, TRY_BIGINT] |S |Data types |Returns text converted to an integer or NULL on failure. |SQL
 |<<VALIDATE_CONVERSION>>|T |Data types|Tests whether a given character string can be converted to a specified target type. |SQL
 |===
 
@@ -422,3 +440,9 @@ HEXTOINT(_hexstring_)
 ----
 
 hexstring:: A non-empty character string containing the valid hexadecimal representation of a number in BIGINT range.
+
+=== SPLIT
+
+The SPLIT function tokenizes a comma-separated string and returns one row per token. It can be considered the inverse of LISTAGG(values, ',').
+
+Unfortunately 

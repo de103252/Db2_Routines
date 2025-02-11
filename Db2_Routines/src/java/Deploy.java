@@ -1,0 +1,26 @@
+import java.io.FileNotFoundException;
+import java.sql.SQLException;
+import java.sql.Types;
+
+public class Deploy {
+
+	public static void main(String[] args) throws SQLException, FileNotFoundException {
+		java.sql.Connection c = java.sql.DriverManager.getConnection("jdbc:db2://newg:5045/DALLASD", "adcdmst",
+				"he1del");
+		java.sql.CallableStatement s = c.prepareCall("call sqlj.db2_replace_jar(?, ?)");
+		s.setBlob(1, new java.io.BufferedInputStream(new java.io.FileInputStream(
+				"C:\\Users\\103252724\\OneDrive - IBM\\Documents\\Git\\Db2_Routines\\Db2_Routines\\target\\routines.jar")));
+		s.setString(2, "ADCDMST.ROUTINES");
+		s.execute();
+		s = c.prepareCall("call sysproc.wlm_refresh(?, ?, ?, ?");
+		s.setString(1, "DBDGENVJ");
+		s.setNull(2, Types.VARCHAR);
+		s.registerOutParameter(3,  Types.VARCHAR);
+		s.registerOutParameter(4, Types.INTEGER);
+		s.execute();
+		c.commit();
+		c.close();
+		System.out.println("Done.");
+	}
+
+}

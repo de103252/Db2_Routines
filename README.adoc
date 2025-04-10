@@ -291,6 +291,15 @@ It works only on systems with dynamic APF enabled.
 APFLIST(_format-string_, PACK(CCSID 1208, _arg1_, _arg2_, ...))
 ----
 
+=== RACFPROFILE
+
+The RACFPROFILE function returns the name of the RACF profile that covers the given data set.
+
+[subs="quotes"]
+----
+RACFPROFILE(dsname)
+----
+
 === TO_ROMAN
 
 This extremely useful UDF converts a small integer to a roman numeral.

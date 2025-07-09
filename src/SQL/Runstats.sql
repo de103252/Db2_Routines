@@ -76,7 +76,4 @@ select runstats('DATABASE', 'DSN8D13L', '', '')
      , utility_output
   from sysibm.sysdummyu
 #
-select substr(text, 2) from sysibm.sysprint#
-
-#
 

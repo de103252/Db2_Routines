@@ -1,8 +1,15 @@
--- The SPLIT function splits an input string 
--- into tokens separated by commas.
--- Unfortunately, as there is no way to "escape" commas,
--- the input tokens cannot contain any.
+-- Following comment lines tell Data Studio resp. SPUFI
+-- to use # as statement terminator
+--
+--<ScriptOptions statementTerminator="#"/>
+--#SET TERMINATOR #
 
+/*
+The SPLIT function splits an input string 
+into tokens separated by commas.
+Unfortunately, as there is no way to "escape" commas,
+the input tokens cannot contain any.
+*/
 
 drop function sysfun.split(input varchar(32704));
 create function sysfun.split(input varchar(32704))
@@ -61,8 +68,11 @@ select seqno, token
                    , token varchar(32704) path '.')
 #
 
+-----------------------------------------------------------------------
+-- Test
+-----------------------------------------------------------------------
+
 select *
   from table(split('a,b,c;d\,efg'))
 #
-  
-select * from xmltable('text()' passing tokenize('foo;bar; baz', '; *'))              
+           

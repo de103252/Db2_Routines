@@ -95,6 +95,19 @@ begin
   -- Find columns that are in both tables, and are updateable
   -- in the target table.
   with
+  tb as (
+  select distinct 
+         t2.creator as creator
+       , t2.name as name
+       , t2.type as type
+    from sysibm.systables  t1
+    join sysibm.systables  t2
+      on (t2.creator, t2.name) 
+         = 
+         (case t1.type when 'A' then t1.tbcreator else t1.creator end,
+          case t1.type when 'A' then t1.tbname    else t1.name    end)
+   where t1.type not in ('D', 'G', 'P', 'X')
+  ),
   cols as (
   select tb.creator as tbcreator
        , tb.name as tbname
@@ -102,7 +115,7 @@ begin
        , co.colno
        , co.updates
        , co.default
-    from sysibm.systables  tb
+    from                   tb
     join sysibm.syscolumns co
       on (tb.creator, tb.name) = (co.tbcreator, co.tbname)
    order by colno
@@ -190,7 +203,9 @@ begin
   -- Iterate over all tables, and invoke the single-table crossload
   -- function for each.                                
   for select name from sysibm.systables                          
-       where creator = sourceschema               
+       where creator = sourceschema
+         and name not like 'DSN_%'
+         and name not like 'PLAN_TABLE'
       intersect                                                     
       select name from sysibm.systables                          
        where type = 'T' and creator = targetschema
@@ -233,13 +248,20 @@ create table emp like dsn81310.emp#
 select crossload('select * from dsn81310.emp', 
                  current sqlid, 'EMP',
                  100) as rc
-     , utility_output
   from sysibm.sysdummyu
 #
+select utility_output
+  from sysibm.sysdummyu
+#
+
 select * from emp
+#
 
 select crossload('DSN81310', current sqlid) as rc
      , utility_output
+  from sysibm.sysdummyu
+#
+select utility_output
   from sysibm.sysdummyu
 #
 

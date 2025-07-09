@@ -1,11 +1,14 @@
+-- Following comment lines tell Data Studio resp. SPUFI
+-- to use # as statement terminator
+--
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
-------------------------------------------------------------------------
--- This extremely useful UDF converts a small integer
--- to a roman numeral.
--- Only values in the range [1..9999] are allowed.
-------------------------------------------------------------------------
+/*
+This extremely useful UDF converts a small integer
+to a roman numeral.
+Only values in the range [1..9999] are allowed.
+*/
 drop function to_roman(number smallint)#
 create function to_roman(number smallint)
 returns varchar(20)
@@ -49,15 +52,18 @@ begin
 end
 #
 
---<ScriptOptions statementTerminator=";"/>
---#SET TERMINATOR ;
+-----------------------------------------------------------------------
+-- Test
+-----------------------------------------------------------------------
 
 select to_roman(year(current date)) as current_year_roman
-  from sysibm.sysdummyu;
+  from sysibm.sysdummyu
+#  
   
-select to_roman(1964) from sysibm.sysdummyu;
-select to_roman(9999) from sysibm.sysdummyu;
+select to_roman(1964) from sysibm.sysdummyu#
+select to_roman(9999) from sysibm.sysdummyu#
 
-select to_roman(value) "In saecula saeculorum"
+select value           as "Year"
+     , to_roman(value) as "In saecula saeculorum"
   from table(generate_series(year(current date), 
                              year(current date) + 99))

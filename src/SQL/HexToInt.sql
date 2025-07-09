@@ -67,6 +67,6 @@ results as (
 )
 select *
   from results
- where expected_result <> actual_result
+ where expected_result <> actual_result OR 1 = 1
 #
 

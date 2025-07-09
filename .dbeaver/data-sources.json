@@ -6,6 +6,8 @@
 			"driver": "db2_zos",
 			"name": "DALLASD",
 			"save-password": true,
+			"show-system-objects": true,
+			"show-util-objects": true,
 			"configuration": {
 				"host": "newg",
 				"port": "5045",
@@ -16,16 +18,18 @@
 				"closeIdleConnection": true,
 				"auth-model": "native"
 			},
+			"filters": [],
 			"custom-properties": {
+				"SQLEditor.Folding.enabled": "false",
+				"SQLEditor.Semantics.metadata.read.enable": "false",
 				"SQLEditor.clearOutputBeforeExecute": "true",
+				"SQLEditor.format.keywordCaseAuto": "false",
 				"SQLEditor.maxEditorOnScriptExecute": "false",
-				"SQLEditor.refreshDefaultsAfterExecute": "false",
 				"SQLEditor.setSelectionToStatisticsTab": "true",
 				"SQLEditor.showStatisticsForQueriesWithResults": "NEVER",
 				"script.commit.lines": "1",
 				"script.commit.type": "AT_END",
-				"script.fetch.resultset": "false",
-				"script.sql.delimiter": "#",
+				"script.sql.delimiter.blank": "ONLY_SEPARATOR",
 				"script.sql.ignoreNativeDelimiter": "true"
 			}
 		}

@@ -72,6 +72,10 @@ begin
 end
 #
 
+-----------------------------------------------------------------------
+-- Test
+-----------------------------------------------------------------------
+
 with
 u(null_s, null_i, null_b) as (
   select cast(null as smallint)
@@ -100,4 +104,5 @@ select *
  where as is distinct from es
     or ai is distinct from ei
     or ab is distinct from eb
+    or 1 = 1 -- Remove to see wrong results only
 #

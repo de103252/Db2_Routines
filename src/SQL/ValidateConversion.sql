@@ -69,6 +69,10 @@ begin
 end
 #
 
+-----------------------------------------------------------------------
+-- Test
+-----------------------------------------------------------------------
+
 with
 d(d) as (
   select 1 from sysibm.sysdummyu
@@ -106,6 +110,7 @@ results as (
 select *
   from results
  where expected_result <> actual_result
+    OR 1 = 1 -- remove to see wrong results only
 #
 
 -- This is going to fail  

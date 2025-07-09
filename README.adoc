@@ -5,6 +5,35 @@ but are not.
 
 The functions are implemented both as SQL functions and external functions; the external functions, in turn, are written in C, COBOL and Java.
 
+== Overview
+
+The following table shows an overview of all functions:
+
+[width="100%",cols="40%,15%,15%,15%,15%",options="header",]
+|===
+|Function               |Type |Category      |Description |Implemented in
+|<<APFLIST>>            |T    |System        |Returns a table with all APF authorized data sets on the system. |COBOL
+|<<BASE64DECODE>>       |S    |Data types    |Decodes BASE64 format to binary data |Java
+|<<BASE64ENCODE>>       |S    |Data types    |Encodes binary data to BASE64 format |Java
+|<<CROSSLOAD>>          |S    |Utilities     |Copies data from one table to another |SQL
+|<<EASTER>>             |S    |Date and time |Calculates the date of Easter for a given year |SQL
+|<<FORMATTIMESTAMP>>    |S    |Date and time |Locale-sensitive formatting of a timestamp value |Java
+|<<GENERATE_SERIES>>    |T    |Data types    |Generate a series of values between a start and an end value, with an optional step. |SQL
+|<<HEXTOINT>>           |S    |Data types    |Converts a hex string to int |SQL
+|<<RACFPROFILE>>        |S    |System        |Returns the RACF profile that covers the input data set name. |COBOL
+|<<READ_GENERIC_FILE>>  |T    |System        |Reads records from a flat file and returns them as a table. |C
+|<<REGEX_MATCHES>>      |S    |Strings       |Matches a regular expression against a string |Java or SQL
+|<<REGEX_REPLACE>>      |S    |Strings       |Replaces regular expression matches within a string |Java
+|<<RUNSTATS>>           |S    |Utilities     |Runs statistics against a table or a set of tables |SQL
+|<<SPLIT>>              |T    |Text          |Tokenizes a comma-separated string (inverse of LISTAGG)|SQL
+|<<SUBMIT>>             |S    |Utilities     |Submits a JCL job stream and returns the job output as a CLOB|SQL
+|<<SUBMIT_T>>           |T    |Utilities     |Submits a JCL job stream and returns the job output as a table|SQL
+|<<TO_ROMAN>>           |S    |Data types    |Converts a small integer to a Roman numeral. |SQL
+|xref::try_integer[TRY_INTEGER, TRY_SMALLINT, TRY_BIGINT] 
+                        |S    |Data types    |Returns text converted to an integer or NULL on failure. |SQL
+|<<VALIDATE_CONVERSION>>|T    |Data types|Tests whether a given character string can be converted to a specified target type. |SQL
+|===
+
 == Installation
 
 The installation of the function differs on the function implementation.
@@ -17,132 +46,34 @@ External functions in a compiled language (C or COBOL) need to be compiled, link
 
 External functions written in Java can be installed by creating a Jar and placing that Jar either into the CLASSPATH of the Java Virtual Machine running in your Java WLM environment, or by placing the Jar into the Db2 catalog using the SQLJ_DB2_INSTALL_JAR stored procedure. 
 
-== Overview
+== Date and time
 
-The following table shows an overview of all functions:
+=== EASTER
 
-[width="100%",cols="40%,15%,15%,15%,15%",options="header",]
-|===
-|Function |Type |Category |Description |Implemented in
-|<<APFLIST>>           |T |System |Returns a table with all APF authorized data sets on the system. |COBOL
-|<<BASE64DECODE>> |S |Data types |Decodes BASE64 format to binary data |Java
-|<<BASE64ENCODE>> |S |Data types |Encodes binary data to BASE64 format |Java
-|<<CROSSLOAD>> |S |Utilities |Copies data from one table to another |SQL
-|<<EASTER>> |S |Date and time |Calculates the date of Easter for a given year |SQL
-|<<FORMATTIMESTAMP>> |S |Date and time |Locale-sensitive formatting of a timestamp value |Java
-|<<GENERATE_SERIES>> |T |Numbers |Generate a series of values between a start and an end value, with an optional step. |SQL
-|<<HEXTOINT>> |S |Data types |Converts a hex string to int |SQL
-|<<RACFPROFILE>>       |S |System |Returns the RACF profile that covers the input data set name. |COBOL
-|<<READ_GENERIC_FILE>> |T |System |Reads records from a flat file and returns them as a table. |C
-|<<REGEX_MATCHES>> |S |Strings |Matches a regular expression against a string |Java or SQL
-|<<REGEX_REPLACE>> |S |Strings |Replaces regular expression matches within a string |Java
-|<<RUNSTATS>> |S |Utilities |Runs statistics against a table or a set of tables |SQL
-|<<SPLIT>> |T |Text |Tokenizes a comma-separated string (inverse of LISTAGG)|SQL
-|<<SUBMIT>> |S |Utilities |Submits a JCL job stream and returns the job output as a CLOB|SQL
-|<<SUBMIT_T>> |T |Utilities |Submits a JCL job stream and returns the job output as a table|SQL
-|<<TO_ROMAN>> |S |Numbers |Converts a small integer to a Roman numeral. |SQL
-|xref::try_integer[TRY_INTEGER, TRY_SMALLINT, TRY_BIGINT] |S |Data types |Returns text converted to an integer or NULL on failure. |SQL
-|<<VALIDATE_CONVERSION>>|T |Data types|Tests whether a given character string can be converted to a specified target type. |SQL
-|===
+This function returns the date of Easter Sunday in the given year, which
+must be a year after the Gregorian calendar reform (>= 1583).
 
-== READ_GENERIC_FILE
-
-This generic table UDF reads records from a flat file and returns them
-as relational rows, according to the column specification in the
-SELECT statement's typed-correlation-clause.
-
-[subs="quotes"]
-----
-READ_GENERIC_FILE(_filename_, _flags_)
-----
-
-filename:: The name of the file to be read. It must refer to a data set or a PDS(E) member.
-flags:: A short integer that contains flags which influence error handling.
-
-The file can be any kind of file that can be read using the C fread()
-function, including sequential files (fixed or variable), PDS(E) members
-(fixed or variable), and VSAM KSDS or ESDS.
-
-Here is an example of a SELECT statement using the UDF:
-
-.Example
-[source,sql]
 ....
-SELECT *
-  FROM TABLE(READ_GENERIC_FILE('ADCDMST.FLAT.TEST')) T (
-          id     char(8)
-        , name   varchar(20)
-        , int64  bigint
-        , int32  integer
-        , int16  smallint
-        , dec7_2 decimal(13, 2)
-        , ddd    date
-        , tm     time
-        , rst    varbinary(80)
-        )
-....
-
-The UDF expects the flat file to be in a format that is in sync with the
-column specification in the typed correlation clause, that is, each
-supported SQL type corresponds with a native type that may be described,
-for example, with a COBOL picture clause.
-
-In this example, the records in file ADCDMST.FLAT.TEST are expected to
-be in the following format:
-
-[cols=",,",options="header",]
-|===
-|Offset|Length|Description
-|1|8|Alphanumeric bytes
-|9|20|Alphanumeric bytes 
-|29|8|Binary doubleword 
-|37|4|Binary fullword
-|41|2|Binary halfword 
-|43|8|Date in zoned decimal format (YYYYMMDD)
-|51|4|Time time in zoned decimal format (hhmm)
-|55|n|Up to 80 alphanumeric bytes
-|===
-
-The following SQL types are supported, and correspond to the respective
-native data types:
-
-[cols=",",options="header",]
-|===
-|SQL type |COBOL type
-|`+VARCHAR(x)+` |`+PIC X(x)+`
-|`+BINARY(x)+` |`+PIC X(x)+`
-|`+VARBINARY(x)+` |`+PIC X(x)+`
-|`+SMALLINT+` |`+PIC S9(4)      COMP-5+`
-|`+INTEGER+` |`+PIC S9(9)      COMP-5+`
-|`+BIGINT+` |`+PIC S9(18)    COMP-5+`
-|`+DECIMAL(p,s)+` |`+PIC S9(p)V(s)  COMP-3+`
-|`+DATE+` |`+PIC 9999-99-99 DISPLAY+`
-|`+TIME+` |`+PIC 99.99      DISPLAY+`
-|===
-
-== Base64 encoding and decoding
-
-The two functions BASE64ENCODE and BASE64DECODE provide encoding and
-decoding between binary values and their Base64 representation. The
-binary values can be supplied as either VARBINARY or BLOB data types.
-
-[subs="quotes"]
-----
-BASE64ENCODE(_data_)
-----
-
-data:: The data to be Base-64 encoded.
-
-Returns a CLOB containing the Base-64 representation of the input data.
-The length of the returned CLOB will be about 33% larger than the length of the input data.
-
-.Example
-....
-select base64encode(cast('Uli Seelbach' as blob))
+select current date as today, easter(year(current date)) as easter
   from sysibm.sysdummyu;
 ....
 
-== VALIDATE_CONVERSION
+....
+select easter(1582) from sysibm.sysdummyu;
+....
+
+Using the <<GENERATE_SERIES>> function, we can find
+out the Easter dates for the next 50 years:
+
+....
+select easter(value) as "Easter Sunday"
+  from table(generate_series(2000, 2050));
+....
+
+
+== Data types
+
+=== VALIDATE_CONVERSION
 :!seq1:
 
 Tests whether a given character string can be converted
@@ -178,160 +109,28 @@ select validate_conversion('2024-01-09', 'date') from sysibm.sysdummyu
 select validate_conversion(src_string, target_type)
 ----
 
-=== EASTER
+=== TRY_INTEGER, TRY_SMALLINT, TRY_BIGINT
 
-This function returns the date of Easter Sunday in the given year, which
-must be a year after the Gregorian calendar reform (>= 1583).
+The TRY_xxx functions try to convert the string value passed to an integer type. The conversion is performed in the same way as the respective built-in function and follows the same rules. Leading and trailing blanks are therefore permitted.
 
-....
-select current date as today, easter(year(current date)) as easter
-  from sysibm.sysdummyu;
-....
+The difference to the built-in functions is the behavior when the input string is not a valid string representation of an integer type, or if the integer value is out of range for the target type. In this case, NULL is returned and an SQL warning (SQLSTATE 02018) is raised.
 
-....
-select easter(1582) from sysibm.sysdummyu;
-....
+=== HEXTOINT
 
-Using the <<GENERATE_SERIES>> function, we can find
-out the Easter dates for the next 50 years:
+The HEXTOINT function converts the hexadecimal string representation of a number to the numeric value. It can be considered the inverse of the HEX function with a BIGINT argument.
 
-....
-select easter(value) as "Easter Sunday"
-  from table(generate_series(2000, 2050));
-....
+The string must not be empty, and must contain upper-case or lower-case hex digits only (0..9, A..F, a..f); otherwise, SQLSTATE 72606 is raised. 
 
-== Regular expressions
-
-=== REGEX_MATCHES
-[subs="quotes"]
-----
-REGEX_MATCHES(_string-expression_, _pattern-expression_)
-----
-
-string-expression:: An expression that specifies the string in which the search is to take place. This expression must be character string expression that can be converted to VARCHAR(32704).
-
-pattern-expression:: An expression that specifies the regular expression string that is the pattern for the search. 
-This expression must be character string expression that can be converted to VARCHAR(32704).
-
-=== REGEX_REPLACE
-
-== System utility functions
-
-=== SUBMIT and SUBMIT_T
-
-SUBMIT and SUBMIT_T submit a job to an internal reader, wait for job
-completion, and return the job's spool output. SUBMIT is a scalar function
-that returns the job output as a CLOB; SUBMIT_T is a table function and returns
-the job output as one row per line of output.
+The hex string must represent a number within the range of a BIGINT, otherwise, an overflow condition is raised (SQLSTATE 22003).
 
 [subs="quotes"]
 ----
-submit(_jcl_)
+HEXTOINT(_hexstring_)
 ----
 
-[subs="quotes"]
-----
-submit_t(_jcl_)
-----
+hexstring:: A non-empty character string containing the valid hexadecimal representation of a number in BIGINT range.
 
-jcl:: The JCL text to submit. The data type is CLOB.
 
-.Example
-....
-with job(jcl) as (
-select '
-//TEST JOB ,NOTIFY=&SYSUID
-//DISPL  EXEC PGM=IEFBR14'
-  from sysibm.sysdummyu
-)
-select submit(jcl) as sysout
-  from job
-....
-
-The function waits for the submitted job to complete before returning.
-It checks for job completion each second; therefore, if the 
-
-=== RUNSTATS
-
-Performs a RUNSTATS operation against the specified tables.
-
-[,sql]
-----
-runstats(objects, schema_pattern, object_name_pattern, statement)
-----
-
-objects:: Determines what kind of objects the following parameters specify; 
-can be either 'TABLES' or 'DATABASE'. The spelling is case insensitive.
-schema_pattern:: When objects is TABLES, specifies the schema name pattern of the tables.
-When objects is DATABASE, specifies the database name pattern.
-object_name_pattern:: When objects is TABLES, specifies the table name pattern of the tables.
-When objects is DATABASE, specifies the tablespace name pattern. If null, this means
-all tables within the schema, or all tablespaces within the database.
-statement:: The RUNSTATS statistics-spec. If null or empty, defaults to USE PROFILE SORTDEVT SYSALLDA.
-
-The result of the function is the return code from DSNUTILV.
-
-If you need to examine the RUNSTATS output, perform a SELECT from global temporary table
-SYSIBM.SYSPRINT after the RUNSTATS invocation, in the same transaction.
-
-.Example
-[source,sql]
-----
-select runstats('database', 'DSN8D13L', '', '') from sysibm.sysdummyu#
-select substr(text, 2) from sysibm.sysprint#
-----
-
-=== APFLIST
-
-The APFLIST table function returns a list of all APF authorized datasets on the system.
-It works only on systems with dynamic APF enabled.
-
-[subs="quotes"]
-----
-APFLIST(_format-string_, PACK(CCSID 1208, _arg1_, _arg2_, ...))
-----
-
-=== RACFPROFILE
-
-The RACFPROFILE function returns the name of the RACF profile that covers the given data set.
-
-[subs="quotes"]
-----
-RACFPROFILE(dsname)
-----
-
-=== TO_ROMAN
-
-This extremely useful UDF converts a small integer to a roman numeral.
-Only values in the range [1..9999] are allowed.
-
-[subs="quotes"]
-----
-TO_ROMAN(_number_)
-----
-
-number:: The number to be converted. It must be a small integer in the range 1 to 9999.
-
-The function returns a character string that is the roman numeral representation of
-the given number, in classical subtractive notation. That is, 40 is represented as IX,
-900 as CM, etc.
-
-If the number is outside the allowed range, SQLSTATE 77753 is raised.
-
-.Example:
-[source,sql]
-----
-select to_roman(year(current date))
-    as current_year_roman
-  from sysibm.sysdummyu;
-----
-
-.Result:
-....
- CURRENT_YEAR_ROMAN
- ------------------
- MMXXIV
-....
 
 === GENERATE_SERIES
 
@@ -409,6 +208,17 @@ select value
  0
 ....
 
+[[:try_integer]]
+== Text
+
+
+
+=== SPLIT
+
+The SPLIT function tokenizes a comma-separated string and returns one row per token. It can be considered the inverse of LISTAGG(values, ',').
+
+Unfortunately 
+
 === SPRINTF
 
 The SPRINTF function performs general string formatting of one or more
@@ -428,30 +238,276 @@ The function returns a character string.
 This function allows formatting of multiple values of different data types in a more concise
 way than manual formatting using the capabilities of standard SQL.
 
-[[:try_integer]]
-=== TRY_INTEGER, TRY_SMALLINT, TRY_BIGINT
+=== REGEX_MATCHES
+[subs="quotes"]
+----
+REGEX_MATCHES(_string-expression_, _pattern-expression_)
+----
 
-The TRY_xxx functions try to convert the string value passed to an integer type. The conversion is performed in the same way as the respective built-in function and follows the same rules. Leading and trailing blanks are therefore permitted.
+string-expression:: An expression that specifies the string in which the search is to take place. This expression must be character string expression that can be converted to VARCHAR(32704).
 
-The difference to the built-in functions is the behavior when the input string is not a valid string representation of an integer type, or if the integer value is out of range for the target type. In this case, NULL is returned and an SQL warning (SQLSTATE 02018) is raised.
+pattern-expression:: An expression that specifies the regular expression string that is the pattern for the search. 
+This expression must be character string expression that can be converted to VARCHAR(32704).
 
-=== HEXTOINT
+=== REGEX_REPLACE
 
-The HEXTOINT function converts the hexadecimal string representation of a number to the numeric value. It can be considered the inverse of the HEX function with a BIGINT argument.
+=== TO_ROMAN
 
-The string must not be empty, and must contain upper-case or lower-case hex digits only (0..9, A..F, a..f); otherwise, SQLSTATE 72606 is raised. 
-
-The hex string must represent a number within the range of a BIGINT, otherwise, an overflow condition is raised (SQLSTATE 22003).
+This extremely useful UDF converts a small integer to a roman numeral.
+Only values in the range [1..9999] are allowed.
 
 [subs="quotes"]
 ----
-HEXTOINT(_hexstring_)
+TO_ROMAN(_number_)
 ----
 
-hexstring:: A non-empty character string containing the valid hexadecimal representation of a number in BIGINT range.
+number:: The number to be converted. It must be a small integer in the range 1 to 9999.
 
-=== SPLIT
+The function returns a character string that is the roman numeral representation of
+the given number, in classical subtractive notation. That is, 40 is represented as IX,
+900 as CM, etc.
 
-The SPLIT function tokenizes a comma-separated string and returns one row per token. It can be considered the inverse of LISTAGG(values, ',').
+If the number is outside the allowed range, SQLSTATE 77753 is raised.
 
-Unfortunately 
+.Example:
+[source,sql]
+----
+select to_roman(year(current date))
+    as current_year_roman
+  from sysibm.sysdummyu;
+----
+
+.Result:
+....
+ CURRENT_YEAR_ROMAN
+ ------------------
+ MMXXIV
+....
+
+== Base64 encoding and decoding
+
+The two functions BASE64ENCODE and BASE64DECODE provide encoding and
+decoding between binary values and their Base64 representation. The
+binary values can be supplied as either VARBINARY or BLOB data types.
+
+=== BASE64ENCODE
+
+[subs="quotes"]
+----
+BASE64ENCODE(_data_)
+----
+
+data:: The data to be Base-64 encoded.
+
+Returns a CLOB containing the Base-64 representation of the input data.
+The length of the returned CLOB will be about 33% larger than the length of the input data.
+
+.Example
+....
+select base64encode(cast('Uli Seelbach' as blob))
+  from sysibm.sysdummyu;
+....
+
+=== BASE64DECODE
+
+
+== System utility functions
+
+=== DB2UTILITY
+
+Runs one or more Db2 utility statements.
+
+=== RUNSTATS
+
+Performs a RUNSTATS operation against the specified tables.
+
+[,sql]
+----
+runstats(objects, schema_pattern, object_name_pattern, statement)
+----
+
+objects:: Determines what kind of objects the following parameters specify; 
+can be either 'TABLES' or 'DATABASE'. The spelling is case insensitive.
+schema_pattern:: When objects is TABLES, specifies the schema name pattern of the tables.
+When objects is DATABASE, specifies the database name pattern.
+object_name_pattern:: When objects is TABLES, specifies the table name pattern of the tables.
+When objects is DATABASE, specifies the tablespace name pattern. If null, this means
+all tables within the schema, or all tablespaces within the database.
+statement:: The RUNSTATS statistics-spec. If null or empty, defaults to USE PROFILE SORTDEVT SYSALLDA.
+
+The result of the function is the return code from DSNUTILV.
+
+If you need to examine the RUNSTATS output, perform a SELECT from global temporary table
+SYSIBM.SYSPRINT after the RUNSTATS invocation, in the same transaction.
+
+.Example
+[source,sql]
+----
+select runstats('database', 'DSN8D13L', '', '') from sysibm.sysdummyu#
+select substr(text, 2) from sysibm.sysprint#
+----
+
+=== CROSSLOAD
+
+This family of functions copies data from one or more source tables to corresponding target tables 
+using the Db2 cross-loader function.
+
+[subs="quotes"]
+----
+crossload(_sourceselect_, _targetschema_, _targettable_, _tmpspace_)
+----
+
+sourceselect:: A SELECT statement that returns the data to be copied from the source table.
+targetschema:: The schema name of the target table.
+targettable:: The name of the target table.
+tmpspace:: Temp space in MB to be allocated for the LOAD utility. Defaults to 5 MB if set to NULL.
+
+The function returns the return code from the LOAD utility if that return code was 4 or less.
+If the return code is greater than 4, an error condition is signalled.
+
+[subs="quotes"]
+----
+crossload(_sourceschema_, _sourcetable_, _targetschema_, _targettable_)
+----
+sourcescheme:: The schema name of the source table
+sourcetable:: The name of the source table.
+targetschema:: The schema name of the target table.
+targettable:: The name of the target table.
+
+Copies the contents of the source table to the target table. Only columns are copied
+that are common to both tables and that are updateable in the target table (this excludes
+GENERATED ALWAYS columns).
+
+[subs="quotes"]
+----
+crossload(_sourceschema_, _targetschema_)     
+----
+
+=== SUBMIT and SUBMIT_T
+
+SUBMIT and SUBMIT_T submit a job to an internal reader, wait for job
+completion, and return the job's spool output. SUBMIT is a scalar function
+that returns the job output as a CLOB; SUBMIT_T is a table function and returns
+the job output as one row per line of output.
+
+[subs="quotes"]
+----
+submit(_jcl_)
+----
+
+[subs="quotes"]
+----
+submit_t(_jcl_)
+----
+
+jcl:: The JCL text to submit. The data type is CLOB.
+
+.Example
+....
+with job(jcl) as (
+select '
+//TEST JOB ,NOTIFY=&SYSUID
+//DISPL  EXEC PGM=IEFBR14'
+  from sysibm.sysdummyu
+)
+select submit(jcl) as sysout
+  from job
+....
+
+The function waits for the submitted job to complete before returning.
+It checks for job completion each second; therefore, if the 
+
+=== APFLIST
+
+The APFLIST table function returns a list of all APF authorized datasets on the system.
+It works only on systems with dynamic APF enabled.
+
+[subs="quotes"]
+----
+APFLIST(_format-string_, PACK(CCSID 1208, _arg1_, _arg2_, ...))
+----
+
+=== RACFPROFILE
+
+The RACFPROFILE function returns the name of the RACF profile that covers the given data set.
+
+[subs="quotes"]
+----
+RACFPROFILE(dsname)
+----
+
+=== READ_GENERIC_FILE
+
+This generic table UDF reads records from a flat file and returns them
+as relational rows, according to the column specification in the
+SELECT statement's typed-correlation-clause.
+
+[subs="quotes"]
+----
+READ_GENERIC_FILE(_filename_, _flags_)
+----
+
+filename:: The name of the file to be read. It must refer to a data set or a PDS(E) member.
+flags:: A short integer that contains flags which influence error handling.
+
+The file can be any kind of file that can be read using the C fread()
+function, including sequential files (fixed or variable), PDS(E) members
+(fixed or variable), and VSAM KSDS or ESDS.
+
+Here is an example of a SELECT statement using the UDF:
+
+.Example
+[source,sql]
+....
+SELECT *
+  FROM TABLE(READ_GENERIC_FILE('ADCDMST.FLAT.TEST')) T (
+          id     char(8)
+        , name   varchar(20)
+        , int64  bigint
+        , int32  integer
+        , int16  smallint
+        , dec7_2 decimal(13, 2)
+        , ddd    date
+        , tm     time
+        , rst    varbinary(80)
+        )
+....
+
+The UDF expects the flat file to be in a format that is in sync with the
+column specification in the typed correlation clause, that is, each
+supported SQL type corresponds with a native type that may be described,
+for example, with a COBOL picture clause.
+
+In this example, the records in file ADCDMST.FLAT.TEST are expected to
+be in the following format:
+
+[cols=",,",options="header",]
+|===
+|Offset|Length|Description
+|1|8|Alphanumeric bytes
+|9|20|Alphanumeric bytes 
+|29|8|Binary doubleword 
+|37|4|Binary fullword
+|41|2|Binary halfword 
+|43|8|Date in zoned decimal format (YYYYMMDD)
+|51|4|Time time in zoned decimal format (hhmm)
+|55|n|Up to 80 alphanumeric bytes
+|===
+
+The following SQL types are supported, and correspond to the respective
+native data types:
+
+[cols=",",options="header",]
+|===
+|SQL type |COBOL type
+|`+VARCHAR(x)+` |`+PIC X(x)+`
+|`+BINARY(x)+` |`+PIC X(x)+`
+|`+VARBINARY(x)+` |`+PIC X(x)+`
+|`+SMALLINT+` |`+PIC S9(4)      COMP-5+`
+|`+INTEGER+` |`+PIC S9(9)      COMP-5+`
+|`+BIGINT+` |`+PIC S9(18)    COMP-5+`
+|`+DECIMAL(p,s)+` |`+PIC S9(p)V(s)  COMP-3+`
+|`+DATE+` |`+PIC 9999-99-99 DISPLAY+`
+|`+TIME+` |`+PIC 99.99      DISPLAY+`
+|===
+

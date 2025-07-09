@@ -9,10 +9,10 @@ Runs the RUNSTATS utility against the specified set of
 tables or tablespaces.
 */
     
-drop    function runstats(what varchar(16),
-                         schema_pattern varchar(1024), 
-                         name_pattern varchar(1024),
-                         statement varchar(16384))#
+drop function runstats(what           varchar(16),
+                       schema_pattern varchar(1024), 
+                       name_pattern   varchar(1024),
+                       statement      varchar(16384))#
 
 /*
 Arguments:

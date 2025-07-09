@@ -8,8 +8,8 @@
 Convert a hex string to an integer (inverse of HEX function).
 The string must contain upper- or lower-case hex digits only
 (0..9, A..F, a..f). otherwise, SQLSTATE 72606 is raised.
-The hex string must represent a number within the range of an
-INTEGER, otherwise, an overflow condition is raised (SQLSTATE 22003).
+The hex string must represent a number within the range of a
+BIGINT, otherwise, an overflow condition is raised (SQLSTATE 22003).
 */
 
 drop function sysfun.hextoint(s varchar(32704))#
@@ -45,6 +45,10 @@ begin
 end
 #
 
+-----------------------------------------------------------------------
+-- Test
+-----------------------------------------------------------------------
+
 with
 d(d) as (
   select 1 from sysibm.sysdummyu
@@ -66,4 +70,3 @@ select *
  where expected_result <> actual_result
 #
 
-select cast(-2147483649 as integer) from sysibm.sysdummyu;

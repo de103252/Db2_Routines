@@ -49,6 +49,12 @@
 			<version>db2jcc4</version>
 			<scope>provided</scope>
 		</dependency>
+        <dependency>
+            <groupId>com.ibm.db2.jcc</groupId>
+            <artifactId>db2jcc_license_cisuz</artifactId>
+            <version>db2jcc4</version>
+            <scope>provided</scope>
+        </dependency>
 		<!-- https://mvnrepository.com/artifact/com.ibm.db2/db2jcc_license_cisuz -->
 
 		<dependency>

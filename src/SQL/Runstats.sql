@@ -1,3 +1,6 @@
+-- Following comment lines tell Data Studio resp. SPUFI
+-- to use # as statement terminator
+--
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
@@ -16,11 +19,11 @@ Arguments:
 WHAT -- Either 'TABLES' or 'DATABASE'
 SCHEMA_PATTERN -- e
 */
-create function runstats(what varchar(16),
+create function runstats(what           varchar(16),
                          schema_pattern varchar(1024), 
-                         name_pattern varchar(1024),
-                         statement varchar(16384))
-  returns clob -- or integer, if interested only in the return code
+                         name_pattern   varchar(1024),
+                         statement      varchar(16384))
+  returns integer
   language sql
   not deterministic
   modifies sql data
@@ -29,8 +32,6 @@ begin
   declare utstmt clob;
   declare sysprint clob default '';
   declare retcode integer;
-  
-  set utilid = 'RS' || varchar_format(current timestamp, 'YYMMDDHH24MISS');
   
   case upper(what)
   when 'TABLES' then
@@ -67,22 +68,12 @@ begin
         'Value of argument 1 is not valid';
     
   end case;
-  call sysproc.dsnutilv(utilid, 'NO', utstmt, retcode);
-
-  if retcode > 4 then
-    signal sqlstate '77777'       
-       set message_text = 
-        'DSNUTILV return code =' || retcode;
-  end if;
-  
-  for select text from sysibm.sysprint order by seqno do
-    set sysprint = sysprint || substr(text, 2) || x'0a';
-  end for;
-  return sysprint; -- or retcode
+  return db2utility(utstmt);
 end
 #
 
 select runstats('DATABASE', 'DSN8D13L', '', '') 
+     , utility_output
   from sysibm.sysdummyu
 #
 select substr(text, 2) from sysibm.sysprint#

@@ -44,6 +44,10 @@ begin
 end
 #
 
+-----------------------------------------------------------------------
+-- Test
+-----------------------------------------------------------------------
+
 -- When was Easter this year?
 select easter(year(current date)) as easter
   from sysibm.sysdummyu

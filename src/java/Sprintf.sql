@@ -249,7 +249,7 @@ with p(p) as (
 )
 select sprintf('it', '%1$tB', p) as Result from p;
 
-select sprintf('%-20s %-20s: %ta, %<td.%<tm.%<tY: %09.2f', 
+select sprintf('de', '%-20s %-20s: %ta, %<td.%<tm.%<tY: %,09.2f', 
                pack(ccsid 1208, lastname, firstnme, birthdate, salary))
   from dsn81310.emp;
   

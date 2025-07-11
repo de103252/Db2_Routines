@@ -3,72 +3,102 @@
 Several scalar and table functions that I wish were part of Db2 for z/OS
 but are not.
 
+This project is a collection of several useful Db2 routines (user-defined functions and stored procedures). They add functionality in
+multiple categories; for example, data type conversion, formatting, and easy invocation of Db2 utilities.
+
 The functions are implemented both as SQL functions and external functions; the external functions, in turn, are written in C, COBOL and Java.
 
 == Overview
 
 The following table shows an overview of all functions:
 
-[width="100%",cols="40%,15%,15%,15%,15%",options="header",]
+[options="header,autowidth",width="100%"]
 |===
 |Function               |Type |Category      |Description |Implemented in
 |<<APFLIST>>            |T    |System        |Returns a table with all APF authorized data sets on the system. |COBOL
-|<<BASE64DECODE>>       |S    |Data types    |Decodes BASE64 format to binary data |Java
-|<<BASE64ENCODE>>       |S    |Data types    |Encodes binary data to BASE64 format |Java
-|<<CROSSLOAD>>          |S    |Utilities     |Copies data from one table to another |SQL
-|<<EASTER>>             |S    |Date and time |Calculates the date of Easter for a given year |SQL
-|<<FORMATTIMESTAMP>>    |S    |Date and time |Locale-sensitive formatting of a timestamp value |Java
-|<<GENERATE_SERIES>>    |T    |Data types    |Generate a series of values between a start and an end value, with an optional step. |SQL
-|<<HEXTOINT>>           |S    |Data types    |Converts a hex string to int |SQL
-|<<RACFPROFILE>>        |S    |System        |Returns the RACF profile that covers the input data set name. |COBOL
-|<<READ_GENERIC_FILE>>  |T    |System        |Reads records from a flat file and returns them as a table. |C
-|<<REGEX_MATCHES>>      |S    |Strings       |Matches a regular expression against a string |Java or SQL
-|<<REGEX_REPLACE>>      |S    |Strings       |Replaces regular expression matches within a string |Java
-|<<RUNSTATS>>           |S    |Utilities     |Runs statistics against a table or a set of tables |SQL
-|<<SPLIT>>              |T    |Text          |Tokenizes a comma-separated string (inverse of LISTAGG)|SQL
-|<<SUBMIT>>             |S    |Utilities     |Submits a JCL job stream and returns the job output as a CLOB|SQL
-|<<SUBMIT_T>>           |T    |Utilities     |Submits a JCL job stream and returns the job output as a table|SQL
+|<<BASE64DECODE>>       |S    |Data types    |Decodes BASE64 format to binary data                             |Java
+|<<BASE64ENCODE>>       |S    |Data types    |Encodes binary data to BASE64 format                             |Java
+|<<CROSSLOAD>>          |S    |Utilities     |Copies data from one table to another                            |SQL
+|<<EASTER>>             |S    |Date and time |Calculates the date of Easter for a given year                   |SQL
+|<<FORMATTIMESTAMP>>    |S    |Date and time |Locale-sensitive formatting of a timestamp value                 |Java
+|<<GENERATE_SERIES>>    |T    |Data types    |Generate a series of values between a start and an end value, 
+                                              with an optional step.                                           |SQL
+|<<HEXTOINT>>           |S    |Data types    |Converts a hex string to int                                     |SQL
+|<<RACFPROFILE>>        |S    |System        |Returns the RACF profile that covers the input data set name.    |COBOL
+|<<READ_GENERIC_FILE>>  |T    |System        |Reads records from a flat file and returns them as a table.      |C
+|<<REGEX_MATCHES>>      |S    |Strings       |Matches a regular expression against a string                    |Java or SQL
+|<<REGEX_REPLACE>>      |S    |Strings       |Replaces regular expression matches within a string              |Java
+|<<RUNSTATS>>           |S    |Utilities     |Runs statistics against a table or a set of tables               |SQL
+|<<SPLIT>>              |T    |Text          |Tokenizes a comma-separated string (inverse of LISTAGG)          |SQL
+|<<SUBMIT>>             |S    |Utilities     |Submits a JCL job stream and returns the job output as a CLOB    |SQL
+|<<SUBMIT_T>>           |T    |Utilities     |Submits a JCL job stream and returns the job output as a table   |SQL
 |<<TO_ROMAN>>           |S    |Data types    |Converts a small integer to a Roman numeral. |SQL
-|xref::try_integer[TRY_INTEGER, TRY_SMALLINT, TRY_BIGINT] 
-                        |S    |Data types    |Returns text converted to an integer or NULL on failure. |SQL
-|<<VALIDATE_CONVERSION>>|T    |Data types|Tests whether a given character string can be converted to a specified target type. |SQL
+a|xref::try_integer[TRY_INTEGER +
+TRY_SMALLINT +
+TRY_BIGINT]  
+                        |S    |Data types    |Returns text converted to an integer or NULL on failure.         |SQL
+|<<VALIDATE_CONVERSION>> |T   |Data types    |Tests whether a given character string can be converted
+                                              to a specified target type.                                      |SQL
 |===
 
 == Installation
 
-The installation of the function differs on the function implementation.
+The installation of each function differs on the function implementation.
 
-The functions can be installed into an installation-defined schema or into the Db2 standard SYSFUN schema. Installing into SYSFUN has the advantage that you do not need to qualify the function name or set the CURRENT FUNCTION PATH special register; it has the disadvantage of risking incompatibilities if a future version of Db2 defines built-in functions with the same name.
+The functions can be installed into an installation-defined schema or into the Db2 standard SYSFUN schema.
+Installing into SYSFUN has the advantage that you do not need to qualify the function name or set the 
+CURRENT FUNCTION PATH special register;
+it has the disadvantage of risking incompatibilities if a future version of Db2
+defines built-in functions with the same name.
 
-SQL functions can be installed by simply running the supplied DDL.
+*SQL functions* can be installed by simply running the supplied DDL.
 
-External functions in a compiled language (C or COBOL) need to be compiled, link-edited and installed in a library that is part of the WLM environment's STEPLIB concatenation.
+*External functions* in a compiled language (C or COBOL) need to be compiled, link-edited and
+placed in a library that is part of the WLM environment's STEPLIB concatenation.
 
-External functions written in Java can be installed by creating a Jar and placing that Jar either into the CLASSPATH of the Java Virtual Machine running in your Java WLM environment, or by placing the Jar into the Db2 catalog using the SQLJ_DB2_INSTALL_JAR stored procedure. 
+External functions written in *Java* can be installed by creating a Jar and placing that Jar
+either into the CLASSPATH of the Java Virtual Machine running in your Java WLM environment,
+or by placing the Jar into the Db2 catalog using the SQLJ_DB2_INSTALL_JAR stored procedure. 
 
 == Date and time
 
 === EASTER
 
-This function returns the date of Easter Sunday in the given year, which
+Returns the date of Easter Sunday in the given year, which
 must be a year after the Gregorian calendar reform (>= 1583).
 
-....
+[subs="quotes"]
+----
+easter(_year_)
+----
+
+The argument can be an integer greater than or equal to the year
+of the Gregorian calendar reform (1583). Otherwise, an error 
+condition (SQLSTATE 71583) is raised.
+
+If the argument is null, the result is the null value.
+
+Examples:
+
+[,sql]
+----
 select current date as today, easter(year(current date)) as easter
   from sysibm.sysdummyu;
-....
+----
 
-....
+[,sql]
+----
 select easter(1582) from sysibm.sysdummyu;
-....
+----
 
 Using the <<GENERATE_SERIES>> function, we can find
 out the Easter dates for the next 50 years:
 
-....
+[,sql]
+----
 select easter(value) as "Easter Sunday"
   from table(generate_series(2000, 2050));
-....
+----
 
 
 == Data types
@@ -88,9 +118,11 @@ The VALIDATE_CONVERSION function tests whether a given character string can be c
 to the specified built-in data type.
 If the string can be successfully converted, returns 1;
 otherwise, returns 0.
-If the string is NULL, returns 1.
+
+If the string is null, returns 1 since any built-in data type supports null values.
+
 If target_type does not specify a valid built-in type name, 
-returns an error. User-defined types are not supported.
+an error condition is signaled. User-defined types are not supported.
 
 src_string:: The source string to be tested.
 target_type:: The target data type.
@@ -109,19 +141,16 @@ select validate_conversion('2024-01-09', 'date') from sysibm.sysdummyu
 select validate_conversion(src_string, target_type)
 ----
 
+[[:try_integer]]
 === TRY_INTEGER, TRY_SMALLINT, TRY_BIGINT
 
-The TRY_xxx functions try to convert the string value passed to an integer type. The conversion is performed in the same way as the respective built-in function and follows the same rules. Leading and trailing blanks are therefore permitted.
+The TRY___xxx__ functions try to convert the string value passed to an integer type. The conversion is performed in the same way as the respective built-in function and follows the same rules. Leading and trailing blanks are therefore permitted.
 
 The difference to the built-in functions is the behavior when the input string is not a valid string representation of an integer type, or if the integer value is out of range for the target type. In this case, NULL is returned and an SQL warning (SQLSTATE 02018) is raised.
 
 === HEXTOINT
 
 The HEXTOINT function converts the hexadecimal string representation of a number to the numeric value. It can be considered the inverse of the HEX function with a BIGINT argument.
-
-The string must not be empty, and must contain upper-case or lower-case hex digits only (0..9, A..F, a..f); otherwise, SQLSTATE 72606 is raised. 
-
-The hex string must represent a number within the range of a BIGINT, otherwise, an overflow condition is raised (SQLSTATE 22003).
 
 [subs="quotes"]
 ----
@@ -130,24 +159,42 @@ HEXTOINT(_hexstring_)
 
 hexstring:: A non-empty character string containing the valid hexadecimal representation of a number in BIGINT range.
 
+The input string must not be empty, and must contain upper-case or lower-case hex digits only (0..9, A..F, a..f); otherwise, SQLSTATE 72606 is raised. Leading or trailing whitespace,
+therefore, is not permitted.
+
+If called with a null argument, the function returns the null value.
+
+The hex string must represent a number within the range of a BIGINT, otherwise, an overflow condition is raised (SQLSTATE 22003).
+
+.Example:
+[,sql]
+----
+select hextoint('DEADBEEF') as intval from sysibm.sysdummyu
+----
+
+.Result:
+ INTVAL
+ ----------
+ 3735928559
+
 
 
 === GENERATE_SERIES
 
 Generates a series of integer values in the given interval.
 
-[source,sql]
+[source,sql,subs="quotes"]
 ----
-GENERATE_SERIES(start, stop)
-----
-
-[source,sql]
-----
-GENERATE_SERIES(start, stop, step)
+GENERATE_SERIES(_start_, _stop_)
 ----
 
+[source,sql,subs="quotes"]
+----
+GENERATE_SERIES(_start_, _stop_, _step_)
+----
 
-The GENERATE_SERIES function generates a series of integer values in the given interval 
+
+The GENERATE_SERIES table function generates a series of integer values in the given interval 
 from _start_ to _stop_, with an optional _step_. Both _start_ and _stop_ are inclusive; _step_, if
 specified, must not be 0. No rows are returned if _start_ > _stop_ and _step_
 is positive, or _start_ < _stop_ and _step_ is negative, or if any parameter
@@ -161,13 +208,12 @@ step::
   The increment between consecutive values.  
 
 .Example:
-....
-select value
-  from table(generate_series(1, 5));
-....
+[source,sql]
+----
+select value from table(generate_series(1, 5));
+----
 
 .Result:
-....
  VALUE
  -----
  1
@@ -175,28 +221,25 @@ select value
  3
  4
  5
-....
 
 .Example:
-....
-select value
-  from table(generate_series(1, 9, 3));
-....
+[source,sql]
+----
+select value from table(generate_series(1, 9, 3));
+----
 
 .Result:
-....
  VALUE
  -----
  1
  4
  7
-....
 
 .Example:
-....
- select value as countdown
-  from table(generate_series(3, 0, -1));
-....
+[source,sql]
+----
+select value as countdown from table(generate_series(3, 0, -1));
+----
 
 .Result:
 ....
@@ -208,7 +251,15 @@ select value
  0
 ....
 
-[[:try_integer]]
+.Example:
+[source,sql]
+----
+-- 42 random integers in the range [0, 100)
+select integer(rand() * 100) from table(generate_series(1, 42));
+----
+
+For another example, see the <<EASTER>> function.
+
 == Text
 
 
@@ -217,7 +268,64 @@ select value
 
 The SPLIT function tokenizes a comma-separated string and returns one row per token. It can be considered the inverse of LISTAGG(values, ',').
 
-Unfortunately 
+[sql,subs="quotes"]
+----
+split(_input_ varchar(32704))
+returns table (seqno integer, token varchar(32704))
+----
+
+input:: A character string that contains comma-separated tokens. If a comma is part of a token, i.e. should _not_ be considered a
+token separator, it must be escaped with the `\' character. The input string must not contain Unicode character x'241E' (Record separator)
+as this character is used internally for escaping.
+
+The function returns a table containing the individual tokens and a sequence number starting with 1.
+It is particularly useful with IN predicates if the number of values to test against is known only at runtime,
+see Example.
+
+
+Example 1:
+
+[sql,subs="quotes"]
+----
+select *
+  from table(split('EMP,DEPT,PARTS,SUPPLIERS'));
+----
+
+.Result:
+[options="header,autowidth"]
+|===
+|SEQNO|TOKEN    
+|1    |EMP      
+|2    |DEPT     
+|3    |PARTS    
+|4    |SUPPLIERS
+|===
+  
+Example 2:
+
+To supply the values for an IN predicate where the number of values is known only at runtime,
+pass a host variable containing the comma-separated values to SPLIT and use the fullselect variant
+of the IN predicate:
+
+[sql,subs="quotes"]
+----
+select *
+  from sysibm.systables
+ where name in (select token from table(split(:TABNAMES)));
+----
+
+If the TABNAMES host variable contains the value `EMP,DEPT,PARTS,SUPPLIERS`, this query would be equivalent to
+
+[sql,subs="quotes"]
+----
+select *
+  from sysibm.systables
+ where name in ('EMP', 'DEPT', 'PARTS', 'SUPPLIERS')
+----
+ 
+
+
+=== FORMATTIMESTAMP
 
 === SPRINTF
 
@@ -225,7 +333,7 @@ The SPRINTF function performs general string formatting of one or more
 arguments of various mixed types, using Java's formatting capabilities.
 See https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Formatter.html#org[the Javadoc for java.util.Formatter] for a detailed documentation of the format string.
 
-[subs="quotes"]
+[sql,subs="quotes"]
 ----
 SPRINTF(_format-string_, PACK(CCSID 1208, _arg1_, _arg2_, ...))
 ----
@@ -253,7 +361,8 @@ This expression must be character string expression that can be converted to VAR
 
 === TO_ROMAN
 
-This extremely useful UDF converts a small integer to a roman numeral.
+This extremely useful UDF converts a small integer
+to a https://en.wikipedia.org/wiki/Roman_numerals[roman numeral].
 Only values in the range [1..9999] are allowed.
 
 [subs="quotes"]
@@ -268,6 +377,8 @@ the given number, in classical subtractive notation. That is, 40 is represented 
 900 as CM, etc.
 
 If the number is outside the allowed range, SQLSTATE 77753 is raised.
+
+If called with a null input, the function returns the null value.
 
 .Example:
 [source,sql]
@@ -292,15 +403,21 @@ binary values can be supplied as either VARBINARY or BLOB data types.
 
 === BASE64ENCODE
 
-[subs="quotes"]
+[sql,subs="quotes"]
 ----
-BASE64ENCODE(_data_)
+base64encode (_data_ blob(64m))
+  returns clob(64m) ccsid unicode
+  
+base64encode (_data_ varbinary(24528))
+  returns varchar(32704) ccsid unicode
 ----
 
-data:: The data to be Base-64 encoded.
+data:: The data to be Base-64 encoded, as either VARCHAR or BLOB.
 
-Returns a CLOB containing the Base-64 representation of the input data.
-The length of the returned CLOB will be about 33% larger than the length of the input data.
+Returns the Base-64 representation of the input data.
+The length of the returned character data will be about 33% larger than the length of the input data.
+
+If called with a null input, returns the null value.
 
 .Example
 ....
@@ -309,6 +426,22 @@ select base64encode(cast('Uli Seelbach' as blob))
 ....
 
 === BASE64DECODE
+
+[sql,subs="quotes"]
+----
+base64decode (_data_ clob(64m))
+  returns blob(64m)
+  
+base64decode (_data_ varchar(32704))
+  returns varbinary(24528)
+----
+
+data:: The data to be Base-64 decoded, as either VARCHAR or CLOB.
+
+Returns the decoded input data.
+The length of the returned binary data will be about 75% that of the input data.
+
+If called with a null input, returns the null value.
 
 
 == System utility functions
@@ -328,23 +461,33 @@ runstats(objects, schema_pattern, object_name_pattern, statement)
 
 objects:: Determines what kind of objects the following parameters specify; 
 can be either 'TABLES' or 'DATABASE'. The spelling is case insensitive.
-schema_pattern:: When objects is TABLES, specifies the schema name pattern of the tables.
+schema_pattern:: When _objects_ is `TABLES`, specifies the schema name pattern of the tables.
 When objects is DATABASE, specifies the database name pattern.
 object_name_pattern:: When objects is TABLES, specifies the table name pattern of the tables.
 When objects is DATABASE, specifies the tablespace name pattern. If null, this means
 all tables within the schema, or all tablespaces within the database.
-statement:: The RUNSTATS statistics-spec. If null or empty, defaults to USE PROFILE SORTDEVT SYSALLDA.
+statement:: The RUNSTATS statistics-spec. If null or empty, defaults to `USE PROFILE SORTDEVT SYSALLDA`.
 
 The result of the function is the return code from DSNUTILV.
 
-If you need to examine the RUNSTATS output, perform a SELECT from global temporary table
-SYSIBM.SYSPRINT after the RUNSTATS invocation, in the same transaction.
+If the RUNSTATS utility ended in error (RC > 4), an error condition is signaled.
+
+The output of the RUNSTATS utility is returned in global variable UTILITY_OUTPUT and also
+in the SYSIBM.SYSPRINT global temporary table. This is true even when the utility
+ended in error.
 
 .Example
 [source,sql]
 ----
-select runstats('database', 'DSN8D13L', '', '') from sysibm.sysdummyu#
-select substr(text, 2) from sysibm.sysprint#
+select runstats('database', 'DSN8D13L', '', '')
+     , utility_output 
+  from sysibm.sysdummyu;
+  
+-- or
+
+select runstats('database', 'DSN8D13L', '', '')
+  from sysibm.sysdummyu;
+select substr(text, 2) from sysibm.sysprint;
 ----
 
 === CROSSLOAD

@@ -16,6 +16,7 @@ drop function sysfun.hextoint(s varchar(32704))#
 
 create function sysfun.hextoint(s varchar(32704))
   returns bigint
+  returns null on null input
   deterministic
   parameter ccsid unicode
   no external action
@@ -70,3 +71,5 @@ select *
  where expected_result <> actual_result OR 1 = 1
 #
 
+select hextoint('DEADBEEF') from sysibm.sysdummyu;
+select hextoint(cast(null as char)) from sysibm.sysdummyu;

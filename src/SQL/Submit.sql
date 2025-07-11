@@ -118,6 +118,7 @@ select submit(jcl) as sysout
 
 select *
   from table(submit_t('
-//TEST JOB ,NOTIFY=&SYSUID
+//TEST JOB ,N
+OTIFY=&SYSUID
 //DISPL  EXEC PGM=IEFBR14'))#
 

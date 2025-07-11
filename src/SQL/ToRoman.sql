@@ -12,6 +12,7 @@ Only values in the range [1..9999] are allowed.
 drop function to_roman(number smallint)#
 create function to_roman(number smallint)
 returns varchar(20)
+returns null on null input
   deterministic
   no external action
 begin

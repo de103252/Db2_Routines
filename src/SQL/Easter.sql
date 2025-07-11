@@ -63,3 +63,4 @@ select easter(value) as "Easter Sunday"
 select easter(1582) from sysibm.sysdummyu
 #
 
+SELECT easter(cast(null as integer)) FROM sysibm.sysdummyu

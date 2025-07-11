@@ -24,6 +24,19 @@
  not secured 
  deterministic;
  
+ drop function PARSETIMESTAMP(tsstring varchar(32704), format varchar(32704)) ; 
+ create function PARSETIMESTAMP(tsstring varchar(32704), format varchar(32704)) 
+ returns timestamp with timezone
+ external name 'ADCDMST.ROUTINES:com.ibm.db2.date.Date.parse'
+ language java 
+ parameter style java 
+ no external action 
+ allow parallel 
+ wlm environment DBDGENVJ 
+ asutime no limit 
+ not secured 
+ deterministic;
+ 
 select formattimestamp(current timestamp with time zone, 'EEEE, d MMM yyyy HH:mm:ss', 'de-DE') 
  from sysibm.sysdummyu;
 
@@ -45,4 +58,7 @@ select formattimestamp(current timestamp, 'EEEE, d MMMM yyyy HH:mm:ss', locale),
  
 select formattimestamp(current timestamp, 'hh ''o''''clock'' a, zzzz', 'en-US') 
   from sysibm.sysdummyu;
+ 
+select parsetimestamp('Montag, 30 Jun 2025 07:35:34', 'EEEE, d MMM yyyy HH:mm:ss')
+  from sysibm.sysdummyu
  

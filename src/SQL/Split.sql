@@ -73,6 +73,8 @@ select seqno, token
 -----------------------------------------------------------------------
 
 select *
-  from table(split('a,b,c;d\,efg'))
-#
-           
+  from table(split('a,b,c;d\,efg'));
+  
+select *
+  from sysibm.systables
+ where name in (select token from table(split(?)));

@@ -1,9 +1,3 @@
--- Following comment lines tell Data Studio resp. SPUFI
--- to use # as statement terminator
---
---<ScriptOptions statementTerminator="#"/>
---#SET TERMINATOR #
-
 /*
 The TRY_xxx functions try to convert the string value passed
 to an integer type. The conversion is tried in the same way
@@ -14,11 +8,18 @@ target type, NULL is returned and an SQL warning
 (SQLSTATE 02018) is raised.
 */
 
-drop function sysfun.try_integer(str varchar(32704))#
-drop function sysfun.try_smallint(str varchar(32704))#
-drop function sysfun.try_bigint(str varchar(32704))#
+drop function sysfun.try_integer(str varchar(255));
+drop function sysfun.try_smallint(str varchar(255));
+drop function sysfun.try_bigint(str varchar(255));
 
-create function sysfun.try_integer(str varchar(32704))
+-- Following comment lines tell Data Studio resp. SPUFI
+-- to use # as statement terminator
+--
+--<ScriptOptions statementTerminator="#"/>
+--#SET TERMINATOR #
+
+
+create function sysfun.try_integer(str varchar(255))
   returns integer
   returns null on null input
   parameter ccsid unicode
@@ -36,7 +37,7 @@ begin
 end
 #
 
-create function sysfun.try_smallint(str varchar(32704))
+create function sysfun.try_smallint(str varchar(255))
   returns smallint
   returns null on null input
   parameter ccsid unicode
@@ -54,7 +55,7 @@ begin
 end
 #
 
-create function sysfun.try_bigint(str varchar(32704))
+create function sysfun.try_bigint(str varchar(255))
   returns bigint
   returns null on null input
   parameter ccsid unicode
@@ -72,10 +73,22 @@ begin
 end
 #
 
+-- Following comment lines tell Data Studio resp. SPUFI
+-- to use # as statement terminator
+--
+--<ScriptOptions statementTerminator=";"/>
+--#SET TERMINATOR ;
+
+
 -----------------------------------------------------------------------
 -- Test
 -----------------------------------------------------------------------
 
+select try_integer('42')        answer1,
+        try_integer('  42  ')   answer2,
+        try_integer('fortytwo') answer3
+  from sysibm.sysdummy1;
+  
 with
 u(null_s, null_i, null_b) as (
   select cast(null as smallint)
@@ -86,6 +99,7 @@ u(null_s, null_i, null_b) as (
 values(v, es, ei, eb) as (
             select '',                       null_s, null_i, null_b               from u
   union all select '  42   ',                42,     42,     42                   from u
+  union all select '  42.42 ',               42,     42,     42                   from u
   union all select 'aa42bb',                 null_s, null_i, null_b               from u
   union all select '  42a',                  null_s, null_i, null_b               from u
   union all select '  42a',                  null_s, null_i, null_b               from u
@@ -105,4 +119,4 @@ select *
     or ai is distinct from ei
     or ab is distinct from eb
     or 1 = 1 -- Remove to see wrong results only
-#
+;

@@ -68,3 +68,4 @@ select value           as "Year"
      , to_roman(value) as "In saecula saeculorum"
   from table(generate_series(year(current date), 
                              year(current date) + 99))
+;

@@ -1,6 +1,8 @@
 create function apflist()
-  returns table(dsname varchar(44), volume varchar(6))
+  returns table(seqid integer, dsname varchar(44), volume varchar(6))
   language cobol
+  program type main
+  not deterministic
   parameter style sql
   parameter ccsid ebcdic
   scratchpad

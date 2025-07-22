@@ -6,7 +6,14 @@ but are not.
 This project is a collection of several useful Db2 routines (user-defined functions and stored procedures). They add functionality in
 multiple categories; for example, data type conversion, formatting, and easy invocation of Db2 utilities.
 
-The functions are implemented both as SQL functions and external functions; the external functions, in turn, are written in C, COBOL and Java.
+Many functions are implemented as SQL functions which makes them very easy to deploy
+-- just run the DDL.
+Others are implemented as external functions, written in C, COBOL or Java.
+Of particular interest is <<READ_GENERIC_FILE>> which is a rare example of a generic table function
+(a table function that allows for dynamic specification of the result table's structure).
+
+Even if you do not find the routines useful (which would be a pity), you should find some
+examples for techniques that you _do_ find useful; e.g., recursive table expressions. 
 
 == Overview
 
@@ -16,22 +23,24 @@ The following table shows an overview of all functions:
 |===
 |Function               |Type |Category      |Description |Implemented in
 |<<APFLIST>>            |T    |System        |Returns a table with all APF authorized data sets on the system. |COBOL
-|<<BASE64DECODE>>       |S    |Data types    |Decodes BASE64 format to binary data                             |Java
-|<<BASE64ENCODE>>       |S    |Data types    |Encodes binary data to BASE64 format                             |Java
-|<<CROSSLOAD>>          |S    |Utilities     |Copies data from one table to another                            |SQL
-|<<EASTER>>             |S    |Date and time |Calculates the date of Easter for a given year                   |SQL
-|<<FORMATTIMESTAMP>>    |S    |Date and time |Locale-sensitive formatting of a timestamp value                 |Java
+|<<BASE64DECODE>>       |S    |Data types    |Decodes BASE64 format to binary data.                            |Java
+|<<BASE64ENCODE>>       |S    |Data types    |Encodes binary data to BASE64 format.                            |Java
+|<<CROSSLOAD>>          |S    |Utilities     |Copies data from one table to another.                           |SQL
+|<<EASTER>>             |S    |Date and time |Calculates the date of Easter for a given year.                  |SQL
+|<<FORMATTIMESTAMP>>    |S    |Date and time |Locale-sensitive formatting of a timestamp value.                |Java
 |<<GENERATE_SERIES>>    |T    |Data types    |Generate a series of values between a start and an end value, 
                                               with an optional step.                                           |SQL
-|<<HEXTOINT>>           |S    |Data types    |Converts a hex string to int                                     |SQL
+|<<HEXTOINT>>           |S    |Data types    |Converts a hex string to integer.                                |SQL
 |<<RACFPROFILE>>        |S    |System        |Returns the RACF profile that covers the input data set name.    |COBOL
 |<<READ_GENERIC_FILE>>  |T    |System        |Reads records from a flat file and returns them as a table.      |C
-|<<REGEX_MATCHES>>      |S    |Strings       |Matches a regular expression against a string                    |Java or SQL
-|<<REGEX_REPLACE>>      |S    |Strings       |Replaces regular expression matches within a string              |Java
-|<<RUNSTATS>>           |S    |Utilities     |Runs statistics against a table or a set of tables               |SQL
-|<<SPLIT>>              |T    |Text          |Tokenizes a comma-separated string (inverse of LISTAGG)          |SQL
-|<<SUBMIT>>             |S    |Utilities     |Submits a JCL job stream and returns the job output as a CLOB    |SQL
-|<<SUBMIT_T>>           |T    |Utilities     |Submits a JCL job stream and returns the job output as a table   |SQL
+|<<REGEX_MATCHES>>      |S    |Strings       |Matches a regular expression against a string.                   |Java or SQL
+|<<REGEX_REPLACE>>      |S    |Strings       |Replaces regular expression matches within a string.             |Java
+|<<RUNSTATS>>           |S    |Utilities     |Runs statistics against a table or a set of tables.              |SQL
+|<<SPLIT>>              |T    |Text          |Tokenizes a comma-separated string (inverse of LISTAGG).         |SQL
+|<<SPRINTF>>            |T    |Text          |Formats one or more values according to a Java-style
+                                              format string.                                                   |Java
+|<<SUBMIT>>             |S    |Utilities     |Submits a JCL job stream and returns the job output as a CLOB.   |SQL
+|<<SUBMIT_T>>           |T    |Utilities     |Submits a JCL job stream and returns the job output as a table.  |SQL
 |<<TO_ROMAN>>           |S    |Data types    |Converts a small integer to a Roman numeral. |SQL
 a|xref::try_integer[TRY_INTEGER +
 TRY_SMALLINT +
@@ -111,7 +120,7 @@ to the specified built-in data type.
 
 [subs="quotes"]
 ----
-validate_conversion(_src_string_, _target_type_)
+validate_conversion(_source_string_, _target_type_)
 ----
 
 The VALIDATE_CONVERSION function tests whether a given character string can be converted
@@ -124,7 +133,7 @@ If the string is null, returns 1 since any built-in data type supports null valu
 If target_type does not specify a valid built-in type name, 
 an error condition is signaled. User-defined types are not supported.
 
-src_string:: The source string to be tested.
+source_string:: The source string to be tested.
 target_type:: The target data type.
 
 The result of the function is an integer. The result cannot be null.
@@ -138,21 +147,98 @@ select validate_conversion('2024-01-09', 'date') from sysibm.sysdummyu
 .Example {counter:ex}
 [,sql]
 ----
-select validate_conversion(src_string, target_type)
+with
+d(d) as (
+  select 1 from sysibm.sysdummyu
+),
+tests(value, type, expected_result) as (
+            select '42',         'integer',       1 from d 
+  union all select '42',         'smallint',      1 from d 
+  union all select '42',         'bigint',        1 from d 
+  union all select '42',         'smallint',      1 from d 
+  union all select '  42  ',     'smallint',      1 from d  -- leading and trailing blanks ok
+  union all select 'junk',       'integer',       0 from d  -- complete junk not ok
+  union all select '2147483647', 'integer',       1 from d  -- within range 
+  union all select '2147483648', 'integer',       0 from d  -- not within range
+  union all select '-2147483648', 'integer',      0 from d  -- within range
+  union all select '2024-01-09', 'date',          1 from d 
+  union all select '1.9.2024',   'date',          1 from d 
+  union all select '2024-02-30', 'date',          0 from d  -- No February 30 
+  union all select '29.2.2024',  'date',          1 from d  -- Leap year, European date format 
+  union all select '29.2.2023',  'date',          0 from d  -- Not a leap year
+  union all select '47.11',      'decimal(4, 2)', 1 from d  -- Precision and scale ok
+  union all select '-47.11',     'decimal(4, 2)', 1 from d  -- Negative ok
+  union all select '47.11',      'decimal(3, 2)', 0 from d  -- Insufficient precision 
+  union all select '47.11',      'decimal(3, 1)', 1 from d  -- With truncation of scale, precision now ok 
+  union all select '2024.98765', 'decfloat',      1 from d 
+  union all select '2024-01-25 16:15:14.12345+01:00',
+                   'timestamp(0) with timezone',  1 from d
+  union all select cast(null as char), 'integer', 1 from d  -- Nulls ok                                  
+),
+results as (
+  select row_number() over() as row
+       , tests.*
+       , validate_conversion(value, type) actual_result
+    from tests
+)
+select *
+  from results
+ where expected_result <> actual_result
+    OR 1 = 1 -- remove to see wrong results only
 ----
 
 [[:try_integer]]
 === TRY_INTEGER, TRY_SMALLINT, TRY_BIGINT
 
-The TRY___xxx__ functions try to convert the string value passed to an integer type. The conversion is performed in the same way as the respective built-in function and follows the same rules. Leading and trailing blanks are therefore permitted.
+The TRY___xxx__ functions try to convert the string value passed to an integer type; if the conversion fails, they return
+NULL instead of signaling an error.
 
-The difference to the built-in functions is the behavior when the input string is not a valid string representation of an integer type, or if the integer value is out of range for the target type. In this case, NULL is returned and an SQL warning (SQLSTATE 02018) is raised.
+[sql,subs="quotes"]
+----
+TRY_SMALLINT(_string_expression_)
+TRY_INTEGER(_string_expression_)
+TRY_BIGINT(_string_expression_)
+----
+
+string-expression::
+An expression that returns a value of a character or graphic string (except a CLOB or DBCLOB)
+with a length attribute that is not greater than 255 bytes.
+Leading and trailing blanks are eliminated.
+
+The TRY___xxx__ functions try to convert the string value passed to an integer type.
+
+The conversion is performed in the same way as the respective built-in function and follows the same rules.
+Leading or trailing blanks are therefore permitted, and the fractional part of the argument is truncated.
+
+The difference to the built-in functions is the behavior when the input string is not a valid string representation of an integer type, 
+or if the integer value is out of range for the target type.
+In this case, NULL is returned and an SQL warning (SQLSTATE 02018) is raised.
+
+If the argument is null, the result is the null value.
+
+Example:
+
+[sql,subs="quotes"]
+----
+select try_integer('42')        answer1,
+        try_integer('  42  ')   answer2,
+        try_integer('fortytwo') answer3
+  from sysibm.sysdummy1;
+----
+
+[options="header,autowidth",width="100%"]
+|===
+| ANSWER1 |ANSWER2  |ANSWER3
+|      42 |     42  |  NULL
+|===
+
+
 
 === HEXTOINT
 
 The HEXTOINT function converts the hexadecimal string representation of a number to the numeric value. It can be considered the inverse of the HEX function with a BIGINT argument.
 
-[subs="quotes"]
+[sql,subs="quotes"]
 ----
 HEXTOINT(_hexstring_)
 ----
@@ -169,13 +255,16 @@ The hex string must represent a number within the range of a BIGINT, otherwise, 
 .Example:
 [,sql]
 ----
-select hextoint('DEADBEEF') as intval from sysibm.sysdummyu
+select hextoint('DEADBEEF') as intval
+  from sysibm.sysdummyu
 ----
 
 .Result:
- INTVAL
- ----------
- 3735928559
+[options="header,autowidth",width="100%"]
+|===
+| INTVAL
+| 3735928559
+|===
 
 
 
@@ -558,26 +647,83 @@ select submit(jcl) as sysout
 ....
 
 The function waits for the submitted job to complete before returning.
-It checks for job completion each second; therefore, if the 
+It checks for job completion immediately after submission and then each second.
+
+WARNING: It is therefore likely that the function will run for at least one second.
+Internally, it uses the Unix sleep command to delay execution, and the minimum
+delay that can be specified is one second.
+If the job does not end in a timely manner (for example, if it is waiting for reply to a WTOR),
+the calling program may be suspended for a long time.
 
 === APFLIST
 
 The APFLIST table function returns a list of all APF authorized datasets on the system.
 It works only on systems with dynamic APF enabled.
 
-[subs="quotes"]
+[sql,subs="quotes"]
 ----
-APFLIST(_format-string_, PACK(CCSID 1208, _arg1_, _arg2_, ...))
+function apflist()
+  returns table(seqid  integer, 
+                dsname varchar(44), 
+                volume varchar(6))
 ----
 
+Example:
+
+[sql,subs="quotes"]
+----
+select *
+  from table(apflist());
+----
+
+[options="header,autowidth",width="100%"]
+|===
+| SEQID | DSNAME          |     VOLUME
+|     1 | SYS1.LINKLIB    |     A3RES1
+|     2 | SYS1.SVCLIB     |     A3RES1
+|     3 | SYS1.SHASLNKE   |     A3RES1
+|     4 | SYS1.SIEAMIGE   |     A3RES1
+|  ...  | ...             |     ...
+|===
+  
 === RACFPROFILE
 
 The RACFPROFILE function returns the name of the RACF profile that covers the given data set.
 
-[subs="quotes"]
+[sql,subs="quotes"]
 ----
-RACFPROFILE(dsname)
+function racfprofile(_dsname_ varchar(44), _volume_ char(6))
+  returns varchar(44)
 ----
+
+dsname:: Name of an existing dataset.
+volume:: Volume serial or NULL.
+
+This function returns the RACF profile that covers the named data set
+on the given volume; if _volume_ is null, the data set is looked up
+in the catalog.
+
+NOTE: Due to a restriction of the underlying RACF callable service,
+https://www.ibm.com/docs/en/zos/3.1.0?topic=mfa-r-admin-irrseq00-authentication-factor-service[IRRSEQ00],
+the function works with _existing_ data sets only
+(unlike the RACF LISTDSD command which also works with non-existing data sets
+and returns the name of the profile that would cover the data set
+if it existed).
+
+Example:
+
+[sql,subs="quotes"]
+----
+select racfprofile('ADCDMST.JOB.CNTL', cast(NULL as char(6))) as racf_profile
+  from sysibm.sysdummyu;
+----
+
+[options="header,autowidth",width="100%"]
+|===
+| RACF_PROFILE
+| ADCDMST.*
+|===
+
 
 === READ_GENERIC_FILE
 
@@ -624,7 +770,7 @@ for example, with a COBOL picture clause.
 In this example, the records in file ADCDMST.FLAT.TEST are expected to
 be in the following format:
 
-[cols=",,",options="header",]
+[options="header,autowidth",cols=">,>,<"]
 |===
 |Offset|Length|Description
 |1|8|Alphanumeric bytes
@@ -643,14 +789,14 @@ native data types:
 [cols=",",options="header",]
 |===
 |SQL type |COBOL type
-|`+VARCHAR(x)+` |`+PIC X(x)+`
-|`+BINARY(x)+` |`+PIC X(x)+`
-|`+VARBINARY(x)+` |`+PIC X(x)+`
-|`+SMALLINT+` |`+PIC S9(4)      COMP-5+`
-|`+INTEGER+` |`+PIC S9(9)      COMP-5+`
-|`+BIGINT+` |`+PIC S9(18)    COMP-5+`
-|`+DECIMAL(p,s)+` |`+PIC S9(p)V(s)  COMP-3+`
-|`+DATE+` |`+PIC 9999-99-99 DISPLAY+`
-|`+TIME+` |`+PIC 99.99      DISPLAY+`
+|`VARCHAR(_n_)`       |`PIC X(_n_)`
+|`BINARY(_n_)`        |`PIC X(_n_)`
+|`VARBINARY(_n_)`     |`PIC X(_n_)`
+|`SMALLINT`           |`PIC S9(4)      COMP-5`
+|`INTEGER`            |`PIC S9(9)      COMP-5`
+|`BIGINT`             |`PIC S9(18)    COMP-5`
+|`DECIMAL(_p_, _s_)` |`PIC S9(_p_)V(_s_)  COMP-3`
+|`DATE`               |`PIC 9999-99-99 DISPLAY`
+|`TIME`               |`PIC 99.99      DISPLAY`
 |===
 

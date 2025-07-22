@@ -26,6 +26,7 @@ The following table shows an overview of all functions:
 |<<BASE64DECODE>>       |S    |Data types    |Decodes BASE64 format to binary data.                            |Java
 |<<BASE64ENCODE>>       |S    |Data types    |Encodes binary data to BASE64 format.                            |Java
 |<<CROSSLOAD>>          |S    |Utilities     |Copies data from one table to another.                           |SQL
+|<<DB2UTILITY>>         |S    |Utilities     |Runs one or more Db2 utility statements.                         |SQL
 |<<EASTER>>             |S    |Date and time |Calculates the date of Easter for a given year.                  |SQL
 |<<FORMATTIMESTAMP>>    |S    |Date and time |Locale-sensitive formatting of a timestamp value.                |Java
 |<<GENERATE_SERIES>>    |T    |Data types    |Generate a series of values between a start and an end value, 
@@ -39,8 +40,8 @@ The following table shows an overview of all functions:
 |<<SPLIT>>              |T    |Text          |Tokenizes a comma-separated string (inverse of LISTAGG).         |SQL
 |<<SPRINTF>>            |T    |Text          |Formats one or more values according to a Java-style
                                               format string.                                                   |Java
-|<<SUBMIT>>             |S    |Utilities     |Submits a JCL job stream and returns the job output as a CLOB.   |SQL
-|<<SUBMIT_T>>           |T    |Utilities     |Submits a JCL job stream and returns the job output as a table.  |SQL
+|xref::submit[SUBMIT]   |S    |Utilities     |Submits a JCL job stream and returns the job output as a CLOB.   |SQL
+|xref::submit[SUBMIT_T] |T    |Utilities     |Submits a JCL job stream and returns the job output as a table.  |SQL
 |<<TO_ROMAN>>           |S    |Data types    |Converts a small integer to a Roman numeral. |SQL
 a|xref::try_integer[TRY_INTEGER +
 TRY_SMALLINT +
@@ -539,11 +540,28 @@ If called with a null input, returns the null value.
 
 Runs one or more Db2 utility statements.
 
+[sql,subs="quotes"]
+----
+db2utility(_utilid_ varchar(16), _stmt_ clob ccsid unicode)
+  returns integer
+----
+
+utilid:: Utility ID or NULL. If NULL, the procedure generates a random utility ID.
+stmt::  The utility statement(s).
+
+The function runs the supplied Db2 utility statements and returns the highest
+return code from running the utility if it was 4 or less. Otherwise,
+an SQL condition with SQLSTATE 5UA99 is issued. 
+
+The utility output is returned in global variable `UTILITY_OUTPUT`, regardless
+of the return code.
+ 
+
 === RUNSTATS
 
 Performs a RUNSTATS operation against the specified tables.
 
-[,sql]
+[sql,subs="quotes"]
 ----
 runstats(objects, schema_pattern, object_name_pattern, statement)
 ----
@@ -584,7 +602,7 @@ select substr(text, 2) from sysibm.sysprint;
 This family of functions copies data from one or more source tables to corresponding target tables 
 using the Db2 cross-loader function.
 
-[subs="quotes"]
+[sql,subs="quotes"]
 ----
 crossload(_sourceselect_, _targetschema_, _targettable_, _tmpspace_)
 ----
@@ -615,6 +633,7 @@ GENERATED ALWAYS columns).
 crossload(_sourceschema_, _targetschema_)     
 ----
 
+[[:submit]]
 === SUBMIT and SUBMIT_T
 
 SUBMIT and SUBMIT_T submit a job to an internal reader, wait for job

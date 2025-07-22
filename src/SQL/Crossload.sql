@@ -42,25 +42,28 @@ create function crossload(sourceselect varchar(32704),
   modifies sql data
 begin
   set tmpspace = min(tmpspace, 5);
-  return db2utility('
-  TEMPLATE UT1 DSN &US..TEMP.SYSUT1.&UQ.
-               DISP(NEW,DELETE,DELETE) 
-               SPACE(' || tmpspace || ',' || tmpspace || ') MB                                                
-  TEMPLATE SO  DSN &US..TEMP.SORTOUT.&UQ.
-               DISP(NEW,DELETE,DELETE) 
-               SPACE(' || tmpspace || ',' || tmpspace || ') MB                                                  
-
-  EXEC SQL                                               
-   DECLARE C1 CURSOR FOR ' || sourceselect || ';     
-  ENDEXEC  
+  return db2utility(
+  'TEMPLATE UT1 DSN &US..TEMP.SYSUT1.&UQ.
+               DISP(NEW,DELETE,DELETE) ' ||
+               case when tmpspace is null 
+                    then 'CYL'
+                    else 'SPACE(' || tmpspace || ',' || tmpspace || ') MB' 
+               end ||
+  'TEMPLATE SO  DSN &US..TEMP.SORTOUT.&UQ.
+                DISP(NEW,DELETE,DELETE) ' ||
+               case when tmpspace is null 
+                    then 'CYL'
+                    else 'SPACE(' || tmpspace || ',' || tmpspace || ') MB' 
+               end ||
+  'EXEC SQL                                               
+     DECLARE C1 CURSOR FOR ' || sourceselect || ';     
+   ENDEXEC  
       
-  LOAD DATA INCURSOR(C1)
-  WORKDDN(UT1,SO) 
-  LOG(NO)
-  SORTDEVT SYSALLDA 
-  REPLACE 
-  STATISTICS REPORT(YES)
-  INTO TABLE "' || targetschema || '"."' || targettable || '"'
+   LOAD DATA INCURSOR(C1) WORKDDN(UT1,SO) LOG(NO)
+   SORTDEVT SYSALLDA 
+   REPLACE 
+   STATISTICS REPORT(YES)
+   INTO TABLE "' || targetschema || '"."' || targettable || '"'
 );
 end
 #

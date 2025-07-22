@@ -226,7 +226,7 @@
                                   Freesp-Subpool
                         Returning Freesp-Return-Code
               If Freesp-Return-Code Not = 0 Then
-                 Display 'CF4USER FREESP rc=' Freesp-Return-Code
+      D          Display 'CF4USER FREESP rc=' Freesp-Return-Code
               End-If
            End-If
            Goback.
@@ -239,7 +239,7 @@
            Perform Admn-Prof-Numseg Times
               Set Address Of Admn-Prof-Segdesc
                  To Segdesc-Pointer
-              Display 'Segment ' Admn-Prof-Segname
+      D       Display 'Segment ' Admn-Prof-Segname
       *                Point at first field
               Set Flddesc-Pointer To Out-Message-Strings
               Add Admn-Prof-Fieldoffset To Flddesc-Pointer-Num
@@ -253,9 +253,9 @@
                     To Flddata-Pointer-Num
                  Set Address Of Admn-Prof-Data
                     To Flddata-Pointer
-                 Display Admn-Prof-Fieldname
-                         " = "
-                         Admn-Prof-Data(1:Admn-Prof-Fieldlen)
+      D          Display Admn-Prof-Fieldname
+      D                  " = "
+      D                  Admn-Prof-Data(1:Admn-Prof-Fieldlen)
       *                    Point at next field
                  Add Length Of Admn-Prof-Fielddesc
                     To Flddesc-Pointer-Num

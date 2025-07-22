@@ -1,9 +1,3 @@
--- Following comment lines tell Data Studio resp. SPUFI
--- to use # as statement terminator
---
---<ScriptOptions statementTerminator="#"/>
---#SET TERMINATOR #
-
 /*
 The SPLIT function splits an input string 
 into tokens separated by commas.
@@ -12,6 +6,7 @@ the input tokens cannot contain any.
 */
 
 drop function sysfun.split(input varchar(32704));
+
 create function sysfun.split(input varchar(32704))
 returns table (seqno integer, token varchar(32704))
 return
@@ -58,7 +53,15 @@ begin
 end
 #      
 
-drop function sysfun.split(input varchar(32704), regex varchar(1024))#
+-- Following comment lines tell Data Studio resp. SPUFI
+-- to use # as statement terminator
+--
+--<ScriptOptions statementTerminator=";"/>
+--#SET TERMINATOR ;
+
+
+drop function sysfun.split(input varchar(32704), regex varchar(1024));
+
 create function sysfun.split(input varchar(32704), regex varchar(1024))
 returns table (seqno integer, token varchar(32704))
 return
@@ -66,14 +69,14 @@ select seqno, token
   from xmltable('t/text()' passing tokenize(input, regex)
              columns seqno for ordinality
                    , token varchar(32704) path '.')
-#
+;
 
 -----------------------------------------------------------------------
 -- Test
 -----------------------------------------------------------------------
 
 select *
-  from table(split('a,b,c;d\,efg'));
+  from table(split('EMP,DEPT,PARTS,SUPPLIERS'));
   
 select *
   from sysibm.systables

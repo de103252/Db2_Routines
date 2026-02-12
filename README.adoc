@@ -1,10 +1,24 @@
 = A collection of Db2 for z/OS user-defined functions (UDFs)
+:toc: left
+:toclevels: 3
+:icons: font
+:source-highlighter: rouge
 
 Several scalar and table functions that I wish were part of Db2 for z/OS
 but are not.
 
 This project is a collection of several useful Db2 routines (user-defined functions and stored procedures). They add functionality in
 multiple categories; for example, data type conversion, formatting, and easy invocation of Db2 utilities.
+
+[IMPORTANT]
+====
+**Security Notice**: Before deploying these functions in a production environment, please review the link:SECURITY.md[Security Policy] and follow the security best practices outlined there.
+====
+
+[TIP]
+====
+**Contributing**: Interested in adding new functions or improving existing ones? Check out our link:CONTRIBUTING.md[Contributing Guidelines]!
+====
 
 Many functions are implemented as SQL functions which makes them very easy to deploy
 -- just run the DDL.
@@ -417,6 +431,45 @@ select *
 
 === FORMATTIMESTAMP
 
+The FORMATTIMESTAMP function performs locale-sensitive formatting of a timestamp value using Java's DateTimeFormatter.
+
+[sql,subs="quotes"]
+----
+FORMATTIMESTAMP(_timestamp_, _pattern_)
+FORMATTIMESTAMP(_timestamp_, _pattern_, _locale_)
+----
+
+timestamp:: A TIMESTAMP value to be formatted.
+pattern:: A format pattern string following Java's DateTimeFormatter syntax. See https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/format/DateTimeFormatter.html[DateTimeFormatter documentation] for pattern syntax.
+locale:: (Optional) A locale identifier in BCP 47 format (e.g., 'en-US', 'de-DE', 'ja-JP'). If omitted, uses the default locale.
+
+The function returns a character string containing the formatted timestamp.
+
+If called with a null timestamp, returns the null value.
+
+.Example 1: Basic formatting
+[sql]
+----
+select formattimestamp(current timestamp, 'yyyy-MM-dd HH:mm:ss')
+  from sysibm.sysdummyu;
+----
+
+.Example 2: Locale-specific formatting
+[sql]
+----
+select formattimestamp(current timestamp, 'EEEE, MMMM d, yyyy', 'en-US') as english,
+       formattimestamp(current timestamp, 'EEEE, MMMM d, yyyy', 'de-DE') as german,
+       formattimestamp(current timestamp, 'EEEE, MMMM d, yyyy', 'ja-JP') as japanese
+  from sysibm.sysdummyu;
+----
+
+.Result:
+[options="header,autowidth"]
+|===
+|ENGLISH                    |GERMAN                      |JAPANESE
+|Friday, February 8, 2026   |Freitag, Februar 8, 2026    |金曜日, 2月 8, 2026
+|===
+
 === SPRINTF
 
 The SPRINTF function performs general string formatting of one or more
@@ -448,6 +501,76 @@ pattern-expression:: An expression that specifies the regular expression string 
 This expression must be character string expression that can be converted to VARCHAR(32704).
 
 === REGEX_REPLACE
+
+The REGEX_REPLACE function replaces all occurrences of a regular expression pattern within a string with a replacement string.
+
+[subs="quotes"]
+----
+REGEX_REPLACE(_string-expression_, _pattern-expression_, _replacement-expression_)
+----
+
+string-expression:: An expression that specifies the string in which replacements are to be made. This expression must be a character string expression that can be converted to VARCHAR(32704).
+
+pattern-expression:: An expression that specifies the regular expression pattern to search for. This expression must be a character string expression that can be converted to VARCHAR(32704). The pattern follows Java regular expression syntax.
+
+replacement-expression:: An expression that specifies the replacement string. This expression must be a character string expression that can be converted to VARCHAR(32704). Can include backreferences to captured groups using $1, $2, etc.
+
+The function returns a character string with all matches of the pattern replaced by the replacement string.
+
+If any argument is null, the result is the null value.
+
+If the pattern is invalid, an SQL error (SQLSTATE 10609) is raised.
+
+.Example 1: Simple replacement
+[sql]
+----
+select regex_replace('Hello World', 'World', 'Db2')
+  from sysibm.sysdummyu;
+----
+
+.Result:
+----
+Hello Db2
+----
+
+.Example 2: Using backreferences
+[sql]
+----
+-- Swap first and last name
+select regex_replace('John Doe', '(\w+)\s+(\w+)', '$2, $1')
+  from sysibm.sysdummyu;
+----
+
+.Result:
+----
+Doe, John
+----
+
+.Example 3: Remove all digits
+[sql]
+----
+select regex_replace('Order123Number456', '\d+', '')
+  from sysibm.sysdummyu;
+----
+
+.Result:
+----
+OrderNumber
+----
+
+.Example 4: Format phone numbers
+[sql]
+----
+select regex_replace('5551234567', '(\d{3})(\d{3})(\d{4})', '($1) $2-$3')
+  from sysibm.sysdummyu;
+----
+
+.Result:
+----
+(555) 123-4567
+----
+
+NOTE: The function uses Java's regular expression engine and caches compiled patterns for performance. The pattern cache holds up to 100 patterns using an LRU (Least Recently Used) eviction policy.
 
 === TO_ROMAN
 
@@ -819,3 +942,214 @@ native data types:
 |`TIME`               |`PIC 99.99      DISPLAY`
 |===
 
+
+
+== Troubleshooting
+
+=== Common Issues
+
+==== Java Functions Fail with ClassNotFoundException
+
+*Symptoms*: Function execution fails with SQLCODE -430 or -4302
+
+*Cause*: JAR file not properly installed in Db2 or not in WLM environment CLASSPATH
+
+*Solution*:
+1. Verify JAR installation:
++
+[sql]
+----
+SELECT JAR_ID, JAR_NAME, JAR_OWNER
+  FROM SYSIBM.SYSJARINFO
+ WHERE JAR_NAME LIKE '%ROUTINES%';
+----
+
+2. If not installed, install using:
++
+[sql]
+----
+CALL SQLJ.DB2_INSTALL_JAR('file:///path/to/routines.jar', 'SCHEMA.ROUTINES', 0);
+----
+
+3. Refresh WLM environment:
++
+[sql]
+----
+CALL SYSPROC.WLM_REFRESH('WLMENV', NULL, ?, ?);
+----
+
+==== C/COBOL Functions Fail with ABEND
+
+*Symptoms*: Function execution results in ABEND (e.g., S0C4, S806)
+
+*Cause*: Load module not in WLM environment STEPLIB or incompatible compile options
+
+*Solution*:
+1. Verify load module location:
+   - Check WLM environment definition in DSNZPARM
+   - Ensure STEPLIB includes the load library
+   - Verify module name matches EXTERNAL NAME in CREATE FUNCTION
+
+2. Check compile options:
+   - C functions must be compiled with XPLINK
+   - COBOL functions must match WLM environment settings
+   - Verify RUN OPTIONS in function definition
+
+==== Function Returns Incorrect Results
+
+*Symptoms*: Function executes but returns unexpected values
+
+*Cause*: Data type mismatch, encoding issues, or logic errors
+
+*Solution*:
+1. Verify parameter data types match function signature
+2. Check CCSID settings (especially for VARCHAR parameters)
+3. Review function logic with test cases
+4. Enable debug mode if available (see function-specific documentation)
+
+==== Performance Issues
+
+*Symptoms*: Function execution is slow or times out
+
+*Cause*: Inefficient implementation, large data volumes, or resource constraints
+
+*Solution*:
+1. Check ASUTIME limit in function definition
+2. Review function implementation for optimization opportunities
+3. For regex functions: simplify patterns or use caching
+4. For table functions: consider adding WHERE clauses to limit rows
+5. Monitor WLM environment resources
+
+==== Permission Denied Errors
+
+*Symptoms*: SQLCODE -551 (authorization failure)
+
+*Cause*: User lacks EXECUTE privilege on function
+
+*Solution*:
+[sql]
+----
+-- Grant execute privilege
+GRANT EXECUTE ON FUNCTION schema.function_name TO user_or_role;
+
+-- Or grant to PUBLIC (use with caution)
+GRANT EXECUTE ON FUNCTION schema.function_name TO PUBLIC;
+----
+
+=== Getting Help
+
+If you encounter issues not covered here:
+
+1. Check the function-specific documentation above
+2. Review the link:SECURITY.md[Security Policy] for security-related issues
+3. Search existing GitHub issues
+4. Create a new issue with:
+   - Function name and version
+   - Db2 version and z/OS level
+   - Complete error message
+   - Steps to reproduce
+   - Expected vs actual behavior
+
+== Performance Considerations
+
+=== Function Execution Costs
+
+Different implementation languages have different performance characteristics:
+
+[options="header,autowidth"]
+|===
+|Implementation |Startup Cost |Execution Speed |Best For
+|SQL            |Low          |Fast            |Simple logic, set operations
+|Java           |Medium       |Medium          |Complex logic, existing libraries
+|C              |Low          |Very Fast       |High-performance, system access
+|COBOL          |Low          |Fast            |Mainframe integration, existing code
+|===
+
+=== Optimization Tips
+
+1. **Use SQL functions when possible** - Lowest overhead, best optimizer integration
+2. **Cache compiled patterns** - Regex functions already do this
+3. **Limit table function output** - Use WHERE clauses to filter early
+4. **Set appropriate ASUTIME** - Balance between timeout and resource usage
+5. **Use DETERMINISTIC** - Allows Db2 to cache results when appropriate
+6. **Consider ALLOW PARALLEL** - For functions that can run in parallel
+
+=== Monitoring Function Performance
+
+[sql]
+----
+-- Check function execution statistics
+SELECT SCHEMA, NAME, ROUTINE_TYPE,
+       INITIAL_INSTS, INITIAL_IOS,
+       AVGCPUTIME, AVGIOTIM
+  FROM SYSIBM.SYSROUTINES
+ WHERE SCHEMA = 'SYSFUN'
+ ORDER BY AVGCPUTIME DESC;
+----
+
+== Architecture
+
+=== Component Overview
+
+The project consists of multiple layers:
+
+----
+┌─────────────────────────────────────────┐
+│         SQL Applications                 │
+│    (SPUFI, DSNTEP2, Applications)       │
+└─────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────┐
+│         Db2 SQL Engine                   │
+│  ┌─────────────────────────────────┐   │
+│  │   SQL Functions (Native)         │   │
+│  └─────────────────────────────────┘   │
+│  ┌─────────────────────────────────┐   │
+│  │   External Function Interface    │   │
+│  └─────────────────────────────────┘   │
+└─────────────────────────────────────────┘
+         │              │              │
+         ▼              ▼              ▼
+┌──────────────┐ ┌──────────┐ ┌──────────────┐
+│ WLM Java Env │ │ WLM C/C++│ │ WLM COBOL    │
+│              │ │ Env      │ │ Env          │
+│ ┌──────────┐ │ │┌────────┐│ │┌────────────┐│
+│ │Java UDFs │ │ ││C UDFs  ││ ││COBOL UDFs  ││
+│ │(JAR)     │ │ ││(Load   ││ ││(Load       ││
+│ │          │ │ ││Module) ││ ││Module)     ││
+│ └──────────┘ │ │└────────┘│ │└────────────┘│
+└──────────────┘ └──────────┘ └──────────────┘
+----
+
+=== Deployment Architecture
+
+1. **SQL Functions**: Deployed via CREATE FUNCTION DDL
+2. **Java Functions**: 
+   - JAR installed via SQLJ.DB2_INSTALL_JAR
+   - Or placed in WLM environment CLASSPATH
+3. **C/COBOL Functions**:
+   - Load modules in WLM environment STEPLIB
+   - Must be in authorized libraries if APF-required
+
+== Version History
+
+=== Current Version
+- Multiple functions across categories
+- Support for Db2 12 and 13
+- Comprehensive documentation
+
+=== Future Enhancements
+See link:ANALYSIS_AND_RECOMMENDATIONS.md[Analysis and Recommendations] for planned improvements.
+
+== License
+
+[Add appropriate license information]
+
+== Contributors
+
+[Add contributor acknowledgments]
+
+== Acknowledgments
+
+Special thanks to the Db2 for z/OS community for inspiration and feedback.

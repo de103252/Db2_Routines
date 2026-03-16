@@ -56,7 +56,7 @@ asutime no limit
 not secured 
 deterministic; 
 
-select unload_csv('seclect * from DSN81310.EMP', '/u/adcdmst/emp.txt', 'Default') 
+select unload_csv('secect * from DSN81310.EMP', '/u/adcdmst/emp.txt', 'Default') 
   from sysibm.sysdummyu
 #
 

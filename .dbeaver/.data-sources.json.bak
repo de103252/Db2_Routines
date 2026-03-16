@@ -31,7 +31,8 @@
 				"script.commit.type": "AT_END",
 				"script.fetch.resultset": "false",
 				"script.sql.delimiter": "#",
-				"script.sql.delimiter.blank": "ONLY_SEPARATOR"
+				"script.sql.delimiter.blank": "ONLY_SEPARATOR",
+				"script.sql.ignoreNativeDelimiter": "true"
 			}
 		}
 	},

@@ -1,0 +1,339 @@
+== Contributing to Db2++_++Routines
+
+Thank you for your interest in contributing to the Db2++_++Routines
+project! This document provides guidelines for contributing to this
+collection of Db2 for z/OS user-defined functions.
+
+=== Table of Contents
+
+* link:#code-of-conduct[Code of Conduct]
+* link:#getting-started[Getting Started]
+* link:#development-guidelines[Development Guidelines]
+* link:#testing-requirements[Testing Requirements]
+* link:#documentation-standards[Documentation Standards]
+* link:#submission-process[Submission Process]
+
+=== Code of Conduct
+
+* Be respectful and inclusive
+* Focus on constructive feedback
+* Help others learn and grow
+* Maintain professional communication
+
+=== Getting Started
+
+==== Prerequisites
+
+* Db2 for z/OS (version 12 or later recommended)
+* For Java functions: JDK 8 or later, Maven 3.6{plus}
+* For C functions: IBM C/C{plus}{plus} compiler for z/OS
+* For COBOL functions: IBM Enterprise COBOL for z/OS
+* Access to a z/OS system with appropriate WLM environments
+
+==== Setting Up Your Development Environment
+
+[arabic]
+. Clone the repository
+. For Java development:
++
+[source,bash]
+----
+mvn clean install
+----
+. Review existing code to understand patterns and conventions
+
+=== Development Guidelines
+
+==== Code Style
+
+===== SQL Functions
+
+* Use *UPPERCASE* for SQL keywords
+* Use *lowercase* for identifiers (table names, column names, function
+names)
+* Indent with 2 spaces
+* Include inline comments for complex logic
+* Always include error handling
+
+Example:
+
+[source,sql]
+----
+create function my_function(input varchar(100))
+  returns integer
+  deterministic
+  no external action
+begin
+  -- Validate input
+  if input is null then
+    signal sqlstate '22004'
+      set message_text = 'Input cannot be null';
+  end if;
+  
+  -- Process and return result
+  return length(input);
+end
+----
+
+===== Java Functions
+
+* Follow https://google.github.io/styleguide/javaguide.html[Google Java
+Style Guide]
+* Use meaningful variable and method names
+* Add Javadoc comments for all public methods
+* Handle exceptions appropriately
+* Use try-with-resources for resource management
+
+Example:
+
+[source,java]
+----
+/**
+ * Encodes binary data to Base64 format.
+ * 
+ * @param data The binary data to encode
+ * @return Base64-encoded string
+ * @throws SQLException if encoding fails
+ */
+public static String encode(byte[] data) throws SQLException {
+    if (data == null) {
+        throw new SQLException("Input data cannot be null", "22004");
+    }
+    return java.util.Base64.getEncoder().encodeToString(data);
+}
+----
+
+===== C Functions
+
+* Follow IBM C/C{plus}{plus} coding standards
+* Use meaningful variable names
+* Add comments for complex pointer operations
+* Always check return codes
+* Free allocated memory properly
+
+===== COBOL Functions
+
+* Follow IBM Enterprise COBOL standards
+* Use meaningful data names
+* Include comprehensive comments
+* Handle all possible return codes
+
+==== Package and Naming Conventions
+
+* Java packages: `com.ibm.db2.++<++category++>++` (e.g.,
+`com.ibm.db2.base64`)
+* Function names: Use descriptive names in UPPERCASE for SQL, camelCase
+for Java
+* Schema: Default to `SYSFUN` or allow user-specified schema
+
+==== Error Handling
+
+All functions must implement proper error handling:
+
+[arabic]
+. *SQL Functions*: Use SIGNAL SQLSTATE with meaningful messages
+. *Java Functions*: Throw SQLException with appropriate SQLSTATE
+. *C Functions*: Return proper SQL return codes
+. *COBOL Functions*: Set SQLSTATE appropriately
+
+Standard SQLSTATEs to use: - `22004` - NULL value not allowed - `22007`
+- Invalid datetime format - `22018` - Invalid character value for cast -
+`22003` - Numeric value out of range - Custom: `7xxxx` for
+application-specific errors
+
+=== Testing Requirements
+
+==== All New Functions Must Include:
+
+[arabic]
+. *Unit Tests* (for Java functions)
+* Place in `src/test/java` directory
+* Use JUnit 5
+* Test normal cases, edge cases, and error conditions
+* Aim for ++>++80% code coverage
+. *Integration Tests* (SQL test scripts)
+* Place in `src/SQL/tests` directory
+* Test with actual Db2 connection
+* Include positive and negative test cases
+* Document expected results
+. *Test Documentation*
+* Describe test scenarios
+* Document expected behavior
+* Include edge cases and boundary conditions
+
+==== Example Test Structure
+
+[source,sql]
+----
+-----------------------------------------------------------------------
+-- Test: MY_FUNCTION
+-----------------------------------------------------------------------
+
+-- Test 1: Normal case
+select my_function('test input') as result
+  from sysibm.sysdummyu;
+-- Expected: <expected result>
+
+-- Test 2: Null input
+select my_function(cast(null as varchar(100))) as result
+  from sysibm.sysdummyu;
+-- Expected: NULL or error depending on function specification
+
+-- Test 3: Edge case - empty string
+select my_function('') as result
+  from sysibm.sysdummyu;
+-- Expected: <expected result>
+
+-- Test 4: Error condition
+select my_function('invalid input that should cause error') as result
+  from sysibm.sysdummyu;
+-- Expected: SQLSTATE xxxxx
+----
+
+=== Documentation Standards
+
+==== Function Documentation Must Include:
+
+[arabic]
+. *Function signature* with parameter descriptions
+. *Purpose* - What the function does
+. *Parameters* - Description of each parameter
+. *Return value* - What the function returns
+. *Examples* - At least 2-3 practical examples
+. *Error conditions* - When and why errors occur
+. *Performance notes* - If relevant
+. *Installation instructions* - How to deploy
+
+==== README.adoc Format
+
+Add your function to the appropriate section in README.adoc:
+
+[source,asciidoc]
+----
+=== MY_FUNCTION
+
+Brief description of what the function does.
+
+[subs="quotes"]
+----
+my_function(_parameter1_, _parameter2_)
+----
+
+parameter1:: Description of first parameter
+parameter2:: Description of second parameter
+
+Detailed description of function behavior.
+
+.Example 1: Basic usage
+[sql]
+----
+select my_function('value1', 'value2')
+  from sysibm.sysdummyu;
+----
+
+.Result:
+----
+Expected output
+----
+----
+
+=== Submission Process
+
+==== Before Submitting
+
+[arabic]
+. *Test thoroughly* on a Db2 for z/OS system
+. *Update documentation* in README.adoc
+. *Add test cases* demonstrating functionality
+. *Check code style* matches project conventions
+. *Verify no hardcoded credentials* or sensitive data
+. *Update overview table* in README.adoc if adding new function
+
+==== Pull Request Guidelines
+
+[arabic]
+. *Create a feature branch* from main
++
+[source,bash]
+----
+git checkout -b feature/my-new-function
+----
+. *Make your changes* following the guidelines above
+. *Commit with clear messages*
++
+[source,bash]
+----
+git commit -m "Add MY_FUNCTION for string manipulation"
+----
+. *Push to your fork*
++
+[source,bash]
+----
+git push origin feature/my-new-function
+----
+. *Create Pull Request* with:
+* Clear title describing the change
+* Description of what the function does
+* Why it’s useful
+* Test results
+* Any breaking changes or dependencies
+
+==== Pull Request Template
+
+[source,markdown]
+----
+## Description
+Brief description of the changes
+
+## Type of Change
+- [ ] New function
+- [ ] Bug fix
+- [ ] Documentation update
+- [ ] Performance improvement
+- [ ] Other (please describe)
+
+## Function Category
+- [ ] Data types
+- [ ] Date and time
+- [ ] Text/String manipulation
+- [ ] System utilities
+- [ ] Other (please specify)
+
+## Testing
+- [ ] Unit tests added/updated
+- [ ] Integration tests added/updated
+- [ ] Tested on Db2 for z/OS
+- [ ] Documentation updated
+
+## Checklist
+- [ ] Code follows project style guidelines
+- [ ] Self-review completed
+- [ ] Comments added for complex code
+- [ ] Documentation updated
+- [ ] No hardcoded credentials or sensitive data
+- [ ] Tests pass successfully
+
+## Additional Notes
+Any additional information reviewers should know
+----
+
+=== Review Process
+
+[arabic]
+. Maintainers will review your submission
+. Feedback may be provided for improvements
+. Once approved, your contribution will be merged
+. You’ll be credited in the contributors list
+
+=== Questions?
+
+If you have questions about contributing: - Review existing code for
+examples - Check the README.adoc for function patterns - Open an issue
+for discussion before major changes
+
+=== License
+
+By contributing, you agree that your contributions will be licensed
+under the same license as the project.
+
+Thank you for contributing to Db2++_++Routines!

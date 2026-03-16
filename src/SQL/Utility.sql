@@ -1,22 +1,22 @@
--- Following comment lines tell Data Studio resp. SPUFI
--- to use # as statement terminator
---
-
-drop function db2utility(stmt clob ccsid unicode);
-drop function db2utility(utilid varchar(16), stmt clob ccsid unicode);
-drop variable utility_output;
-commit;
-
--- Global variable to hold utility ID.
-create variable utility_id varchar(16);
-
--- Global variable to hold output from a utility invocation.
-create variable utility_output clob(4M);
-
-commit;
-
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
+
+set current schema = SYSFUN#
+drop function db2utility(stmt clob ccsid unicode)#
+drop function db2utility(utilid varchar(16), stmt clob ccsid unicode)#
+drop function terminate_utility(utilid varchar(16))#
+drop variable db2util.utility_id#
+drop variable db2util.utility_output#
+commit#
+
+-- Global variable to hold utility ID.
+create variable db2util.utility_id varchar(16)#
+
+-- Global variable to hold output from a utility invocation.
+create variable db2util.utility_output clob(4M)#
+
+commit#
+
 
 /*
 Run Db2 utility statements.
@@ -39,7 +39,6 @@ begin
   declare offs   integer default 1;
   declare stmt_x clob default '';
   declare result clob ccsid unicode default '';
-  declare utilid varchar(16);
   
   -- Translate tab, linefeed and newline characters to spaces.
   -- Since TRANSLATE does not work on LOBs, we need to do this in a loop.
@@ -60,7 +59,7 @@ begin
   end if;
   
   -- Remember the possibly generated utility ID in global variable
-  set utility_id = utilid;
+  set db2util.utility_id = utilid;
   
   -- Call the utility
   call sysproc.dsnutilu(utilid,
@@ -75,7 +74,7 @@ begin
   end for;          
 
   -- Set the global variable.
-  set utility_output = result;
+  set db2util.utility_output = result;
 
   -- Signal an error if the utility terminated with an error return code.
   if rc > 4 then
@@ -96,9 +95,14 @@ begin
 end
 #
 
---<ScriptOptions statementTerminator="#"/>
---#SET TERMINATOR #
+grant execute on function db2utility(varchar(16), clob) to public
+#
 
+grant execute on function db2utility(clob) 
+   to public
+#
+
+/*
 drop function terminate_utility(utilid varchar(16))
 #
 
@@ -127,18 +131,9 @@ begin
   
   insert into sysibm.sysprint values(1, digits(commands_executed));
   insert into sysibm.sysprint values(2, message);
-  set utility_output = message;
+  set db2util.utility_output = message;
 
 --  return ifi_return_code;
 end
 #
-
---<ScriptOptions statementTerminator=";"/>
---#SET TERMINATOR ;
-
-grant execute on function db2utility(varchar(16), clob) to public
-;
-
-grant execute on function db2utility(clob) 
-   to public
-;
+*/

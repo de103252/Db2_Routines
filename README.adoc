@@ -1,24 +1,17 @@
-= A collection of Db2 for z/OS user-defined functions (UDFs)
+= A collection of Db2 for z/OS user-defined functions (UDFs): Several scalar and table functions that I wish were part of Db2 for z/OS but are not.
+//
 :toc: left
 :toclevels: 3
 :icons: font
 :source-highlighter: rouge
 
-Several scalar and table functions that I wish were part of Db2 for z/OS
-but are not.
 
 This project is a collection of several useful Db2 routines (user-defined functions and stored procedures). They add functionality in
 multiple categories; for example, data type conversion, formatting, and easy invocation of Db2 utilities.
 
 [IMPORTANT]
-====
 **Security Notice**: Before deploying these functions in a production environment, please review the link:SECURITY.md[Security Policy] and follow the security best practices outlined there.
-====
 
-[TIP]
-====
-**Contributing**: Interested in adding new functions or improving existing ones? Check out our link:CONTRIBUTING.md[Contributing Guidelines]!
-====
 
 Many functions are implemented as SQL functions which makes them very easy to deploy
 -- just run the DDL.

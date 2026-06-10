@@ -1,0 +1,38 @@
+set current schema = 'SYSFUN';
+
+DROP FUNCTION READ_GENERIC_FILE(FILENAME VARCHAR(54));
+
+CREATE FUNCTION READ_GENERIC_FILE(FILENAME VARCHAR(54))
+  RETURNS GENERIC TABLE
+    LANGUAGE C
+    SECURITY USER
+    EXTERNAL NAME RDGENFIL
+    PARAMETER STYLE DB2SQL
+    PARAMETER CCSID EBCDIC
+    PARAMETER VARCHAR STRUCTURE
+    FINAL CALL
+    FENCED
+    NOT DETERMINISTIC
+    EXTERNAL ACTION
+    DISALLOW PARALLEL
+    SCRATCHPAD 16
+    WLM ENVIRONMENT DBDGENV
+    STAY RESIDENT YES
+    RUN OPTIONS 'POSIX(ON),XPLINK(ON)'
+    -- for debug:
+    --   'POSIX(ON),XPLINK(ON),TEST(,,,TCPIP&10.1.1.1%8001:*)'
+    CARDINALITY 100000
+ ;
+
+SELECT *
+  FROM TABLE(READ_GENERIC_FILE('ADCDMST.FLAT.TEST')) T (
+          id     char(8)
+        , name   char(35)
+--      , int64  bigint
+--      , int32  integer
+--      , int16  smallint
+--      , dec7_2 decimal(13, 2)
+--      , ddd    date
+--      , tm     time
+--      , rst    varbinary(80)
+        )

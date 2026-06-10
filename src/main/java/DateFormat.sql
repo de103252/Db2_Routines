@@ -25,10 +25,10 @@
  not secured 
  deterministic;
 
-select formattimestamp(current timestamp with time zone, 'EEEE, d MMM yyyy HH:mm:ss') 
+select formattimestamp(current timestamp, 'EEEE, d MMM yyyy HH:mm:ss') 
  from sysibm.sysdummyu; 
  
-select formattimestamp(current timestamp with time zone, 'EEEE, d MMM yyyy HH:mm:ss', 'de-DE') 
+select formattimestamp(current timestamp, 'EEEE, d MMM yyyy HH:mm:ss', 'de-DE') 
  from sysibm.sysdummyu;
 
 with 
@@ -48,6 +48,8 @@ select locale,
        formattimestamp(timestamp('2025-01-01-00:11:22'), 'EEEE, d MMMM yyyy HH:mm:ss', locale) 
  from locales;
  
-select formattimestamp(current timestamp, 'BBB', 'en-US') 
+-- Using apostrophes in the format string:
+-- This is messy since both SQL and Java's DateTimeFormatter require duplicate apostrophes...
+select formattimestamp(current timestamp, '''It''''s ''H ''o''''clock'' BBBB', 'en-US') 
   from sysibm.sysdummyu;
   

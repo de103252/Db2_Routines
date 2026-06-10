@@ -7,20 +7,26 @@ import java.sql.Types;
 
 public class Deploy {
 
+	private static final String WLM_ENVIRONMENT = "DBDGENVJ";
+
 	public static void main(String[] args) throws Exception {
 		Class.forName("com.ibm.db2.jcc.DB2Driver");
+		System.out.println("Connecting to database.");
 		java.sql.Connection c = java.sql.DriverManager.getConnection(
 				"jdbc:db2://newg:5045/DALLASD:retrieveMessagesFromServerOnGetMessage=true;", "adcdmst", "he1del");
 		try {
+			System.out.println("Replacing Jar file.");
 			replaceJar(c, "ADCDMST.ROUTINES", "target/routines.jar");
 		} catch (SQLException e) {
 			if (e.getErrorCode() == -204) {
+				System.out.println("Jar file not present, installing.");
 				installJar(c, "ADCDMST.ROUTINES", "target/routines.jar");
 			} else {
 				throw e;
 			}
 		}
-		wlmRefresh(c, "DBDGENVJ");
+		System.out.format("Refreshing WLM environment %s.%n", WLM_ENVIRONMENT);
+		wlmRefresh(c, WLM_ENVIRONMENT);
 		c.commit();
 		c.close();
 		System.out.println("Done.");

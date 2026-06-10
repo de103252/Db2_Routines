@@ -30,6 +30,8 @@ select * from table(split('asdf,h&m,foobar,<,>'));
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
+drop function sysfun.split(input varchar(32704), regex varchar(1024));
+
 drop function tokenize(str varchar(32704), regex varchar(1024))#
 create function tokenize(str varchar(32704), regex varchar(1024))
 returns xml
@@ -41,9 +43,9 @@ begin
 
   -- Prepare a CAST expression from source to target type.
   set sql = 'select '||
-            'xmlquery(''<t>{fn:tokenize(., "' || 
+            'xmlquery(''for $i in fn:tokenize(., "' || 
             regex || 
-            '")}</t>'' passing cast(? as varchar(32704)))' ||
+            '") return <t>{$i}</t>'' passing cast(? as varchar(32704)))' ||
             'from sysibm.sysdummyu';
   prepare stmt from sql;
   open c using str;
@@ -60,13 +62,13 @@ end
 --#SET TERMINATOR ;
 
 
-drop function sysfun.split(input varchar(32704), regex varchar(1024));
+-- drop function sysfun.split(input varchar(32704), regex varchar(1024));
 
 create function sysfun.split(input varchar(32704), regex varchar(1024))
 returns table (seqno integer, token varchar(32704))
 return
 select seqno, token
-  from xmltable('t/text()' passing tokenize(input, regex)
+  from xmltable('t' passing xmlelement(name "a", tokenize(input, regex))
              columns seqno for ordinality
                    , token varchar(32704) path '.')
 ;
@@ -75,9 +77,23 @@ select seqno, token
 -- Test
 -----------------------------------------------------------------------
 
+select xmlquery('fn:count(x)' passing xmlelement(name "a", tokenize('one:two;three|four', '[:\|;]'))) from sysibm.sysdummyu;
+
+select seqno, token
+  from xmltable('t' passing xmlelement(name "a", tokenize('one:two;three|four', '[:\|;]'))
+             columns seqno for ordinality
+                   , token varchar(32704) path '.')
+;
+
+select seqno, token
+  from table(split('one:two;three|four', '[:\|;]'));
+
+select tokenize('one:two;three|four', '[:\|;]')
+  from sysibm.sysdummyu;
+
 select *
   from table(split('EMP,DEPT,PARTS,SUPPLIERS'));
   
 select *
   from sysibm.systables
- where name in (select token from table(split(?)));
+ where name in (select token from table(split('EMP,DEPT,PARTS,SUPPLIERS')));

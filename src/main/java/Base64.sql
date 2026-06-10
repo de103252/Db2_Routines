@@ -186,9 +186,7 @@ SELECT base64encode(cast(null as blob)) from sysibm.sysdummyu;
 -- Example 3: Basic decoding - decode Base64 back to binary
 SELECT base64decode('VWxpIFNlZWxiYWNo') from sysibm.sysdummyu;
 
-select interpret(bx'556c69205365656c62616368' as char(12)) from sysibm.sysdummyu;
-
-SELECT interpret(base64decode('VWxpIFNlZWxiYWNo') as char(12)) from sysibm.sysdummyu;
+-- SELECT interpret(base64decode('VWxpIFNlZWxiYWNo') as char(12)) from sysibm.sysdummyu;
 
 -- Example 4: Encoding multiple concatenated values
 -- This example demonstrates encoding a list of table names

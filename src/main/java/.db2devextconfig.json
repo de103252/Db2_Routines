@@ -1,0 +1,13 @@
+{
+    "Base64.sql": {
+        "execute": {
+            "connectionOptions": "UseNewConnection",
+            "onSuccessOptions": "CommitOnEachStmt",
+            "onErrorOptions": "OnErrContinue",
+            "terminator": ";",
+            "currentSchema": "",
+            "currentPath": "",
+            "useUpperCaseOption": false
+        }
+    }
+}

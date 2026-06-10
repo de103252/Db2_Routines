@@ -1,0 +1,8 @@
+module com.ibm.db2 {
+	exports com.ibm.db2.csv;
+	exports com.ibm.db2.deploy;	
+    requires java.sql;
+    requires ibm.jzos;
+    requires org.apache.commons.csv;
+    requires org.apache.commons.text;
+}

@@ -1,5 +1,6 @@
 
 drop function SPRINTF(format varchar(32704), packed_data varbinary(32704)); 
+
 create function SPRINTF(format varchar(32704), packed_data varbinary(32704)) 
 returns varchar(32704)
 external name
@@ -264,4 +265,15 @@ select    char(lastname, 20)
        || varchar_format(salary, '000000.00')
   from dsn81310.emp;
   
-  
+create function SSCANF(format varchar(32704), data varchar(32704)) 
+returns varbinary(32704)
+external name
+  'ADCDMST.ROUTINES:com.ibm.db2.sprintf.Sprintf.sscanf'
+language java 
+parameter style java 
+no external action 
+allow parallel 
+wlm environment DBDGENVJ 
+asutime no limit 
+continue after failure
+deterministic; 

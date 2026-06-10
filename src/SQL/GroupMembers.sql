@@ -30,4 +30,10 @@ begin
 end
 #
 
-select data_sharing_members() from sysibm.sysdummyu
+select data_sharing_members() from sysibm.sysdummyu;
+
+  call sysproc.admin_command_db2('-DISPLAY GROUP', 100, 'GRP',
+  null, null, null, null, null, null, null, null, null);
+  select * from sysibm.data_sharing_group;
+  
+  return (select listagg(cast(db2_member as varchar(8))) from SYSIBM.DATA_SHARING_GROUP);

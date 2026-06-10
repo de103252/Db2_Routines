@@ -52,11 +52,12 @@ locales(locale) as (
   union all select 'ja-JP' from u
   union all select 'de-AT' from u
 )
-select formattimestamp(current timestamp, 'EEEE, d MMMM yyyy HH:mm:ss', locale),
-       formattimestamp(timestamp('2025-01-01-00:11:22'), 'EEEE, d MMMM yyyy HH:mm:ss', locale)
+select locale,
+       formattimestamp(current timestamp, 'EEEE, d MMMM yyyy HH:mm:ss', locale) now,
+       formattimestamp(timestamp('2025-01-01-00:11:22'), 'EEEE, d MMMM yyyy HH:mm:ss', locale) 
  from locales;
  
-select formattimestamp(current timestamp, 'hh ''o''''clock'' a, zzzz', 'en-US') 
+select formattimestamp(current timestamp with timezone, 'hh ''o''''clock'' a, zzzz', 'en-US') 
   from sysibm.sysdummyu;
  
 select parsetimestamp('Montag, 30 Jun 2025 07:35:34', 'EEEE, d MMM yyyy HH:mm:ss')

@@ -71,5 +71,6 @@ select *
  where expected_result <> actual_result OR 1 = 1
 #
 
-select hextoint('DEADBEEF') from sysibm.sysdummyu;
-select hextoint(cast(null as char)) from sysibm.sysdummyu;
+select hextoint('DEADBEEF') as result from sysibm.sysdummyu;
+select hextoint('JUNK!!!') as result from sysibm.sysdummyu;
+select hextoint(cast(null as char)) as result from sysibm.sysdummyu;

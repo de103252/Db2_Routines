@@ -91,7 +91,21 @@ public class Sprintf {
 
 	}
 
-	private static Object[] unpack(byte[] by) throws SQLException {
+	/**
+	 * Unpacks a {@code byte[]} returned by the Db2 {@code PACK} function.
+	 * Character data must have been packed using UTF-8 encoding, that is,
+	 * with the CCSID1208 clause:
+	 * <PRE>
+     * PACK(CCSID 1208, 'This is VARCHAR data')
+	 * </PRE>
+	 *
+	 * @param by the {@code byte[]} returned by the Db2 {@code PACK} function
+	 * @return the unpacked {@code Object[]}
+	 * @throws SQLException if the data was not packed using the PACK function,
+	 * or if character data was not packed using UTF-8 encoding.
+	 * @see https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=functions-pack-scalar-function
+	 */
+	static Object[] unpack(byte[] by) throws SQLException {
 		if (by == null)
 			return null;
 		PackInputStream dis = new PackInputStream(new ByteArrayInputStream(by));
@@ -186,23 +200,5 @@ public class Sprintf {
 
 	public static String sprintf(String locale, String format, byte[] packedData) throws SQLException {
 		return String.format(Locale.forLanguageTag(locale), format, unpack(packedData));
-	}
-
-	public static void main(String[] args) {
-		try {
-			Object[] u;
-			u = unpack(decodeHexString("00000101e4050200899c"));
-			System.out.println(sprintf("%tm%n",
-					decodeHexString("00000401c0018001e001e404b80005416c696e61197708013fe00000000000000802000004711c")));
-			u = unpack(
-					decodeHexString("00000401c0018001e001e404b80005416c696e61197708013fe00000000000000802000004711c"));
-			u = unpack(decodeHexString(
-					"00000401c00180018801e404b80005416c696e61197708010006202401041452535813980802000004711c"));
-			u = unpack(decodeHexString("00000201c0099004b80005416c696e610006202401041437497936240100"));
-			System.out.println(u);
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
 	}
 }

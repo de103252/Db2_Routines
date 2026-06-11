@@ -16,6 +16,13 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVFormat.Builder;
 import org.apache.commons.csv.CSVPrinter;
@@ -31,13 +38,21 @@ import com.ibm.jzos.ZFile;
  * Utility class for unloading Db2 query results to CSV files on z/OS.
  * <p>
  * This class provides methods to execute SQL SELECT statements and write the
- * results to CSV files with configurable formats and character encodings
- * (CCSID).
- * It supports both USS files and MVS datasets through DD names.
+ * results to CSV files. It can be invoked as a Db2 stored procedure or used
+ * via a command-line interface for standalone execution.
  * </p>
- * 
+ * <p>
+ * Features:
+ * <ul>
+ * <li>Configurable CSV formats and character encodings (CCSID)</li>
+ * <li>Support for USS files and MVS datasets through DD names</li>
+ * <li>GNU/Unix style command-line options for standalone execution</li>
+ * <li>Predefined CSV formats (Excel, RFC4180, etc.) and custom format specifications</li>
+ * </ul>
+ * </p>
+ *
  * @author IBM
- * @version 1.1
+ * @version 1.2
  */
 public final class Unload {
 
@@ -190,32 +205,11 @@ public final class Unload {
 
         try (CSVPrinter csvPrinter = new CSVPrinter(openOutputFile(filename, ccsid), format);
                 PreparedStatement ps = conn.prepareStatement(statement);
-                ResultSet rs = ps.executeQuery()) {
-
-            // Stream processing: write one row at a time to avoid loading entire ResultSet into memory
-            // This is critical for Java 21 compatibility and large result sets
-            java.sql.ResultSetMetaData metaData = rs.getMetaData();
-            int columnCount = metaData.getColumnCount();
-            
-            // Print header if requested
-            if (printHeader) {
-                for (int i = 1; i <= columnCount; i++) {
-                    csvPrinter.print(metaData.getColumnLabel(i));
-                }
-                csvPrinter.println();
-            }
-            
-            // Stream rows one at a time
-            while (rs.next()) {
-                for (int i = 1; i <= columnCount; i++) {
-                    csvPrinter.print(rs.getObject(i));
-                }
-                csvPrinter.println();
-            }
-            
+                ResultSet rs = ps.executeQuery()) 
+        {
+            csvPrinter.printRecords(rs, printHeader);
             setFileTag(filename, ccsid);
             return csvPrinter.getRecordCount();
-
         } catch (SQLException e) {
             throw enhanceSqlException(e);
         }
@@ -434,10 +428,6 @@ public final class Unload {
 
     /**
      * Set file tag for USS file.
-     * <p>
-     * This method sets the file tag to indicate the character encoding.
-     * It silently ignores errors for DD names (which cannot be tagged).
-     * </p>
      *
      * @param filename File name
      * @param ccsid    Character encoding CCSID
@@ -496,29 +486,71 @@ public final class Unload {
     }
 
     /**
-     * Main method for command-line execution.
+     * Main method for command-line execution using Apache Commons CLI.
      * <p>
-     * Usage: java com.ibm.db2.csv.Unload jdbc-url output-file
-     * <br>
+     * Supports GNU/Unix style command-line options with both short and long forms.
      * SQL statement is read from standard input.
      * </p>
      *
-     * @param args Command-line arguments: [jdbc-url, output-file]
+     * @param args Command-line arguments
      */
     public static void main(String[] args) {
-        if (args.length != 2) {
-            usage();
-            System.exit(8);
-        }
-
-        url = args[0];
-        String outputFile = args[1];
-
+        Options options = createOptions();
+        CommandLineParser parser = new DefaultParser();
+        
         try {
+            CommandLine cmd = parser.parse(options, args);
+            
+            // Check for help option
+            if (cmd.hasOption("help")) {
+                printHelp(options);
+                System.exit(0);
+            }
+            
+            // Validate required options
+            if (!cmd.hasOption("u") || !cmd.hasOption("o")) {
+                System.err.println("Error: Missing required options.");
+                System.err.println();
+                printHelp(options);
+                System.exit(8);
+            }
+            
+            // Extract option values
+            url = cmd.getOptionValue("u");
+            String outputFile = cmd.getOptionValue("o");
+            String format = cmd.getOptionValue("f", DEFAULT_FORMAT);
+            int ccsid = DEFAULT_CCSID;
+            
+            // Parse CCSID if provided
+            if (cmd.hasOption("c")) {
+                try {
+                    ccsid = Integer.parseInt(cmd.getOptionValue("c"));
+                    validateCcsid(ccsid);
+                } catch (NumberFormatException e) {
+                    System.err.println("Error: Invalid CCSID value '" + cmd.getOptionValue("c") + "'. Must be an integer between 1 and 65535.");
+                    System.exit(8);
+                } catch (IllegalArgumentException e) {
+                    System.err.println("Error: " + e.getMessage());
+                    System.exit(8);
+                }
+            }
+            
+            // Determine whether to print headers (default is true, unless --no-headers is specified)
+            String printHeaders = cmd.hasOption("h") ? "N" : "Y";
+            
+            // Read SQL from stdin
             String sql = readFully(System.in);
-            long rowCount = unload(sql, outputFile);
+            
+            // Execute unload
+            long rowCount = unload(sql, outputFile, format, ccsid, printHeaders);
             System.out.println("Successfully unloaded " + rowCount + " rows to " + outputFile);
             System.exit(0);
+            
+        } catch (ParseException e) {
+            System.err.println("Error parsing command-line arguments: " + e.getMessage());
+            System.err.println();
+            printHelp(options);
+            System.exit(8);
         } catch (IOException e) {
             System.err.println("I/O error: " + e.getMessage());
             e.printStackTrace(System.err);
@@ -534,6 +566,82 @@ public final class Unload {
             e.printStackTrace(System.err);
             System.exit(20);
         }
+    }
+    
+    /**
+     * Create command-line options for the application.
+     *
+     * @return Options object with all defined command-line options
+     */
+    private static Options createOptions() {
+        Options options = new Options();
+        
+        options.addOption(Option.builder("u")
+                .longOpt("jdbc-url")
+                .hasArg()
+                .argName("URL")
+                .desc("JDBC connection URL (required)")
+                .required(false)  // We'll validate manually for better error messages
+                .build());
+        
+        options.addOption(Option.builder("o")
+                .longOpt("output-file")
+                .hasArg()
+                .argName("FILE")
+                .desc("Output CSV file path (required)")
+                .required(false)  // We'll validate manually for better error messages
+                .build());
+        
+        options.addOption(Option.builder("f")
+                .longOpt("format")
+                .hasArg()
+                .argName("FORMAT")
+                .desc("CSV format name (default: Excel). Predefined formats: Default, Excel, InformixUnload, MySQL, Oracle, PostgreSQL, RFC4180, TDF. Or custom format as key=value pairs separated by semicolons.")
+                .build());
+        
+        options.addOption(Option.builder("c")
+                .longOpt("ccsid")
+                .hasArg()
+                .argName("CCSID")
+                .desc("Output CCSID/character encoding (default: 1208 for UTF-8)")
+                .build());
+        
+        options.addOption(Option.builder("h")
+                .longOpt("no-headers")
+                .hasArg(false)
+                .desc("Suppress column headers in output (default: headers are included)")
+                .build());
+        
+        options.addOption(Option.builder()
+                .longOpt("help")
+                .hasArg(false)
+                .desc("Display this help message")
+                .build());
+        
+        return options;
+    }
+    
+    /**
+     * Print help message with usage information.
+     *
+     * @param options The command-line options to display
+     */
+    private static void printHelp(Options options) {
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.setWidth(100);
+        
+        String header = "\nUnload Db2 query results to CSV files.\n" +
+                        "SQL SELECT statement is read from standard input.\n\n" +
+                        "Options:\n";
+        
+        String footer = "\nExamples:\n" +
+                        "  echo \"SELECT * FROM SYSIBM.SYSTABLES\" | \\\n" +
+                        "    java " + Unload.class.getName() + " -u jdbc:db2://localhost:5035/SAMPLE -o output.csv\n\n" +
+                        "  echo \"SELECT * FROM SYSIBM.SYSTABLES\" | \\\n" +
+                        "    java " + Unload.class.getName() + " --jdbc-url jdbc:db2://localhost:5035/SAMPLE \\\n" +
+                        "         --output-file output.csv --format RFC4180 --ccsid 1208 --no-headers\n";
+        
+        formatter.printHelp("java " + Unload.class.getName(), header, options, footer, true);
     }
 
     /**
@@ -560,22 +668,6 @@ public final class Unload {
         return sb.toString();
     }
 
-    /**
-     * Print usage message to standard error.
-     */
-    private static void usage() {
-        System.err.println("Usage: java " + Unload.class.getName() + " <jdbc-url> <output-file>");
-        System.err.println();
-        System.err.println("Arguments:");
-        System.err.println("  jdbc-url     JDBC connection URL");
-        System.err.println("  output-file  Output CSV file path");
-        System.err.println();
-        System.err.println("SQL SELECT statement is read from standard input.");
-        System.err.println();
-        System.err.println("Example:");
-        System.err.println("  echo \"SELECT * FROM SYSIBM.SYSTABLES\" | \\");
-        System.err.println("    java " + Unload.class.getName() + " jdbc:db2://localhost:5035/SAMPLE output.csv");
-    }
 }
 
 // Made with Bob

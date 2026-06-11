@@ -376,7 +376,73 @@ select 'SPRINTF (MULTI-LOCALE)' as test_category
 #
 
 -- =====================================================================
--- SECTION 7: NULL HANDLING TESTS
+-- SECTION 7: FILE EXPORT FUNCTIONS
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- 7.1 UNLOADCSV
+-- ---------------------------------------------------------------------
+-- Test UNLOADCSV default signature
+select 'UNLOADCSV (DEFAULT SIGNATURE)' as test_category
+     , unloadcsv(
+           'select empno, lastname, workdept from dsn81310.emp fetch first 3 rows only',
+           '/tmp/unloadcsv_emp_default.csv') as rows_unloaded
+  from sysibm.sysdummyu
+#
+
+-- Test UNLOADCSV extended signature with predefined format and header
+select 'UNLOADCSV (PREDEFINED FORMAT)' as test_category
+     , unloadcsv(
+           'select empno, lastname, workdept from dsn81310.emp fetch first 3 rows only',
+           '/tmp/unloadcsv_emp_excel.csv',
+           'Excel',
+           1208,
+           'Y') as rows_unloaded
+  from sysibm.sysdummyu
+#
+
+-- Test UNLOADCSV extended signature with custom format
+select 'UNLOADCSV (CUSTOM FORMAT)' as test_category
+     , unloadcsv(
+           'select empno, lastname, workdept from dsn81310.emp fetch first 3 rows only',
+           '/tmp/unloadcsv_emp_pipe.txt',
+           'delimiter=\|;quoteMode=MINIMAL;nullString=(null);trim=true',
+           1208,
+           'Y') as rows_unloaded
+  from sysibm.sysdummyu
+#
+
+-- Test UNLOADCSV with multiple predefined formats
+with predef_formats(format_name) as (
+  select 'Default' from sysibm.sysdummyu union all
+  select 'Excel' from sysibm.sysdummyu union all
+  select 'RFC4180' from sysibm.sysdummyu union all
+  select 'TDF' from sysibm.sysdummyu
+)
+select 'UNLOADCSV (MULTI-FORMAT)' as test_category
+     , format_name
+     , unloadcsv(
+           'select empno, lastname from dsn81310.emp fetch first 2 rows only',
+           '/tmp/unloadcsv_' || lower(format_name) || '.csv',
+           format_name,
+           1208,
+           'Y') as rows_unloaded
+  from predef_formats
+#
+
+-- Test UNLOADCSV with EBCDIC CCSID target
+select 'UNLOADCSV (EBCDIC CCSID)' as test_category
+     , unloadcsv(
+           'select empno, lastname from dsn81310.emp fetch first 2 rows only',
+           '/tmp/unloadcsv_emp_1047.csv',
+           'Excel',
+           1047,
+           'Y') as rows_unloaded
+  from sysibm.sysdummyu
+#
+
+-- =====================================================================
+-- SECTION 8: NULL HANDLING TESTS
 -- =====================================================================
 
 -- Test functions with NULL inputs
@@ -412,7 +478,7 @@ select 'NULL HANDLING' as test_category
 #
 
 -- =====================================================================
--- SECTION 8: INTEGRATION TESTS
+-- SECTION 9: INTEGRATION TESTS
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
@@ -442,7 +508,7 @@ select 'INTEGRATION: SERIES + ROMAN' as test_category
 #
 
 -- =====================================================================
--- SECTION 9: PERFORMANCE AND EDGE CASES
+-- SECTION 10: PERFORMANCE AND EDGE CASES
 -- =====================================================================
 
 -- Test with empty strings

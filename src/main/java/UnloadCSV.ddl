@@ -53,7 +53,8 @@ returns bigint
 external name 'ADCDMST.ROUTINES:com.ibm.db2.csv.Unload.unload'
 language java 
 parameter style java 
-no external action 
+external action 
+security user
 allow parallel 
 wlm environment DBDGENVJ 
 asutime no limit 
@@ -70,7 +71,8 @@ returns bigint
 external name 'ADCDMST.ROUTINES:com.ibm.db2.csv.Unload.unload(java.lang.String,java.lang.String,java.lang.String,int,java.lang.String)'
 language java 
 parameter style java 
-no external action 
+external action 
+security user
 allow parallel 
 wlm environment DBDGENVJ 
 asutime no limit 

@@ -63,4 +63,22 @@ select easter(value) as "Easter Sunday"
 select easter(1582) from sysibm.sysdummyu
 #
 
-SELECT easter(cast(null as integer)) FROM sysibm.sysdummyu
+SELECT easter(cast(null as integer)) FROM sysibm.sysdummyu;
+
+
+-- ####################################################################
+-- # Basic with SELECT statement
+-- # See https://www.ibm.com/docs/en/db2-for-zos/13?topic=queries-select-statement for complete syntax.
+-- ####################################################################
+with
+jahre as (
+  select value as jahr
+       , timestamp(easter(value)) as Ostern
+    from table(generate_series(year(current date), year(current date) + 10))
+)
+select to_roman(jahr) as "Jahr"
+     , formattimestamp(ostern,           'd. MMMM', 'de-DE') as "Ostern"
+     , formattimestamp(ostern + 39 days, 'd. MMMM', 'de-DE') as "Himmelfahrt"
+     , formattimestamp(ostern + 49 days, 'd. MMMM', 'de-DE') as "Pfingsten"
+     , formattimestamp(ostern + 60 days, 'd. MMMM', 'de-DE') as "Fronleichnam"
+  from jahre

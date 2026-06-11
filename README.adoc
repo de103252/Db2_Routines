@@ -12,12 +12,21 @@ multiple categories; for example, data type conversion, formatting, and easy inv
 [IMPORTANT]
 **Security Notice**: Before deploying these functions in a production environment, please review the link:SECURITY.md[Security Policy] and follow the security best practices outlined there.
 
+[NOTE]
+====
+**IBM Disclaimer**: This code is provided as-is without formal IBM support. The functions and procedures in this repository are community-contributed examples and should be thoroughly tested and validated in your environment before production use. IBM makes no warranties, express or implied, regarding the functionality, reliability, or suitability of this code for any particular purpose. Users assume full responsibility for the implementation and use of these functions.
+====
 
 Many functions are implemented as SQL functions which makes them very easy to deploy
 -- just run the DDL.
 Others are implemented as external functions, written in C, COBOL or Java.
+
 Of particular interest is <<READ_GENERIC_FILE>> which is a rare example of a generic table function
 (a table function that allows for dynamic specification of the result table's structure).
+
+Also, the <<SPRINTF>> function demonstrates how to implement functions with a variable number of arguments, using the https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=functions-pack-scalar-function[PACK] built-in function of Db2 for z/OS that packs its arguments into a single binary string which the SPRINTF implementation can then unpack.
+
+
 
 Even if you do not find the routines useful (which would be a pity), you should find some
 examples for techniques that you _do_ find useful; e.g., recursive table expressions. 
@@ -122,6 +131,47 @@ out the Easter dates for the next 50 years:
 select easter(value) as "Easter Sunday"
   from table(generate_series(2000, 2050));
 ----
+
+=== FORMATTIMESTAMP
+
+The FORMATTIMESTAMP function performs locale-sensitive formatting of a timestamp value using Java's DateTimeFormatter.
+
+[sql,subs="quotes"]
+----
+FORMATTIMESTAMP(_timestamp_, _pattern_)
+FORMATTIMESTAMP(_timestamp_, _pattern_, _locale_)
+----
+
+timestamp:: A TIMESTAMP value to be formatted.
+pattern:: A format pattern string following Java's DateTimeFormatter syntax. See https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/format/DateTimeFormatter.html[DateTimeFormatter documentation] for pattern syntax.
+locale:: (Optional) A locale identifier in BCP 47 format (e.g., 'en-US', 'de-DE', 'ja-JP'). If omitted, uses the default locale.
+
+The function returns a character string containing the formatted timestamp.
+
+If called with a null timestamp, returns the null value.
+
+.Example 1: Basic formatting
+[sql]
+----
+select formattimestamp(current timestamp, 'yyyy-MM-dd HH:mm:ss')
+  from sysibm.sysdummyu;
+----
+
+.Example 2: Locale-specific formatting
+[sql]
+----
+select formattimestamp(current timestamp, 'EEEE, MMMM d, yyyy', 'en-US') as english,
+       formattimestamp(current timestamp, 'EEEE, MMMM d, yyyy', 'de-DE') as german,
+       formattimestamp(current timestamp, 'EEEE, MMMM d, yyyy', 'ja-JP') as japanese
+  from sysibm.sysdummyu;
+----
+
+.Result:
+[options="header,autowidth"]
+|===
+|ENGLISH                    |GERMAN                      |JAPANESE
+|Friday, February 8, 2026   |Freitag, Februar 8, 2026    |金曜日, 2月 8, 2026
+|===
 
 
 == Data types
@@ -363,7 +413,7 @@ select integer(rand() * 100) from table(generate_series(1, 42));
 
 For another example, see the <<EASTER>> function.
 
-== Text
+== Text and JSON
 
 
 
@@ -427,47 +477,6 @@ select *
 ----
  
 
-
-=== FORMATTIMESTAMP
-
-The FORMATTIMESTAMP function performs locale-sensitive formatting of a timestamp value using Java's DateTimeFormatter.
-
-[sql,subs="quotes"]
-----
-FORMATTIMESTAMP(_timestamp_, _pattern_)
-FORMATTIMESTAMP(_timestamp_, _pattern_, _locale_)
-----
-
-timestamp:: A TIMESTAMP value to be formatted.
-pattern:: A format pattern string following Java's DateTimeFormatter syntax. See https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/format/DateTimeFormatter.html[DateTimeFormatter documentation] for pattern syntax.
-locale:: (Optional) A locale identifier in BCP 47 format (e.g., 'en-US', 'de-DE', 'ja-JP'). If omitted, uses the default locale.
-
-The function returns a character string containing the formatted timestamp.
-
-If called with a null timestamp, returns the null value.
-
-.Example 1: Basic formatting
-[sql]
-----
-select formattimestamp(current timestamp, 'yyyy-MM-dd HH:mm:ss')
-  from sysibm.sysdummyu;
-----
-
-.Example 2: Locale-specific formatting
-[sql]
-----
-select formattimestamp(current timestamp, 'EEEE, MMMM d, yyyy', 'en-US') as english,
-       formattimestamp(current timestamp, 'EEEE, MMMM d, yyyy', 'de-DE') as german,
-       formattimestamp(current timestamp, 'EEEE, MMMM d, yyyy', 'ja-JP') as japanese
-  from sysibm.sysdummyu;
-----
-
-.Result:
-[options="header,autowidth"]
-|===
-|ENGLISH                    |GERMAN                      |JAPANESE
-|Friday, February 8, 2026   |Freitag, Februar 8, 2026    |金曜日, 2月 8, 2026
-|===
 
 === SPRINTF
 
@@ -607,54 +616,6 @@ select to_roman(year(current date))
  MMXXIV
 ....
 
-== Base64 encoding and decoding
-
-The two functions BASE64ENCODE and BASE64DECODE provide encoding and
-decoding between binary values and their Base64 representation. The
-binary values can be supplied as either VARBINARY or BLOB data types.
-
-=== BASE64ENCODE
-
-[sql,subs="quotes"]
-----
-base64encode (_data_ blob(64m))
-  returns clob(64m) ccsid unicode
-  
-base64encode (_data_ varbinary(24528))
-  returns varchar(32704) ccsid unicode
-----
-
-data:: The data to be Base-64 encoded, as either VARCHAR or BLOB.
-
-Returns the Base-64 representation of the input data.
-The length of the returned character data will be about 33% larger than the length of the input data.
-
-If called with a null input, returns the null value.
-
-.Example
-....
-select base64encode(cast('Uli Seelbach' as blob))
-  from sysibm.sysdummyu;
-....
-
-=== BASE64DECODE
-
-[sql,subs="quotes"]
-----
-base64decode (_data_ clob(64m))
-  returns blob(64m)
-  
-base64decode (_data_ varchar(32704))
-  returns varbinary(24528)
-----
-
-data:: The data to be Base-64 decoded, as either VARCHAR or CLOB.
-
-Returns the decoded input data.
-The length of the returned binary data will be about 75% that of the input data.
-
-If called with a null input, returns the null value.
-
 [[json2xml]]
 === JSON2XML
 
@@ -720,6 +681,107 @@ select customer_id, orderId, item
 |===
 
 NOTE: The function uses Java's JSON processing libraries and is deterministic.
+
+== CSV Export
+
+=== UNLOADCSV
+
+Unloads query results to CSV files on the z/OS file system.
+
+[sql,subs="quotes"]
+----
+unloadcsv(_statement_, _filename_)
+unloadcsv(_statement_, _filename_, _formatName_, _ccsid_, _printHeader_)
+----
+
+statement:: A SELECT statement that returns the data to be unloaded.
+filename:: The path to the output CSV file on the z/OS file system (e.g., '/u/user/data.csv').
+formatName:: (Optional) The CSV format name. Supported formats include: 'Default', 'Excel', 'RFC4180', 'MySQL', 'PostgreSQLCsv', 'Oracle', and others. Can also be a custom format string with options like `'trim=true, quoteMode=NON_NUMERIC, nullString=(null)'`.
+ccsid:: (Optional) The CCSID for the output file (e.g., 1208 for UTF-8). Default is the job's default CCSID.
+printHeader:: (Optional) 'Y' or '1' to include column headers, 'N' or '0' to exclude them. Default is no header.
+
+The function executes the query and writes the results to a CSV file using Apache Commons CSV library. Returns the number of rows written.
+
+The function requires appropriate file system permissions to write to the specified path.
+
+.Example 1: Basic CSV unload
+[sql]
+----
+select unloadcsv('select * from dsn81310.emp', '/u/user/emp.csv')
+  from sysibm.sysdummyu;
+----
+
+.Example 2: Excel format with header
+[sql]
+----
+select unloadcsv('select * from dsn81310.emp',
+                 '/u/user/emp.csv',
+                 'Excel',
+                 1208,
+                 'Y')
+  from sysibm.sysdummyu;
+----
+
+.Example 3: Custom format with options
+[sql]
+----
+select unloadcsv('select * from dsn81310.emp',
+                 '/u/user/emp.csv',
+                 'trim=true, quoteMode=NON_NUMERIC, nullString=(null)',
+                 1208,
+                 'Y')
+  from sysibm.sysdummyu;
+----
+
+NOTE: The function uses the Java WLM environment and requires the Apache Commons CSV library in the classpath.
+
+== Base64 encoding and decoding
+
+The two functions BASE64ENCODE and BASE64DECODE provide encoding and
+decoding between binary values and their Base64 representation. The
+binary values can be supplied as either VARBINARY or BLOB data types.
+
+=== BASE64ENCODE
+
+[sql,subs="quotes"]
+----
+base64encode (_data_ blob(64m))
+  returns clob(64m) ccsid unicode
+  
+base64encode (_data_ varbinary(24528))
+  returns varchar(32704) ccsid unicode
+----
+
+data:: The data to be Base-64 encoded, as either VARCHAR or BLOB.
+
+Returns the Base-64 representation of the input data.
+The length of the returned character data will be about 33% larger than the length of the input data.
+
+If called with a null input, returns the null value.
+
+.Example
+....
+select base64encode(cast('Uli Seelbach' as blob))
+  from sysibm.sysdummyu;
+....
+
+=== BASE64DECODE
+
+[sql,subs="quotes"]
+----
+base64decode (_data_ clob(64m))
+  returns blob(64m)
+  
+base64decode (_data_ varchar(32704))
+  returns varbinary(24528)
+----
+
+data:: The data to be Base-64 decoded, as either VARCHAR or CLOB.
+
+Returns the decoded input data.
+The length of the returned binary data will be about 75% that of the input data.
+
+If called with a null input, returns the null value.
 
 [[gzip]]
 === GZIP and GUNZIP
@@ -1127,57 +1189,6 @@ native data types:
 |`DATE`               |`PIC 9999-99-99 DISPLAY`
 |`TIME`               |`PIC 99.99      DISPLAY`
 |===
-
-=== UNLOADCSV
-
-Unloads query results to CSV files on the z/OS file system.
-
-[sql,subs="quotes"]
-----
-unloadcsv(_statement_, _filename_)
-unloadcsv(_statement_, _filename_, _formatName_, _ccsid_, _printHeader_)
-----
-
-statement:: A SELECT statement that returns the data to be unloaded.
-filename:: The path to the output CSV file on the z/OS file system (e.g., '/u/user/data.csv').
-formatName:: (Optional) The CSV format name. Supported formats include: 'Default', 'Excel', 'RFC4180', 'MySQL', 'PostgreSQLCsv', 'Oracle', and others. Can also be a custom format string with options like `'trim=true, quoteMode=NON_NUMERIC, nullString=(null)'`.
-ccsid:: (Optional) The CCSID for the output file (e.g., 1208 for UTF-8). Default is the job's default CCSID.
-printHeader:: (Optional) 'Y' or '1' to include column headers, 'N' or '0' to exclude them. Default is no header.
-
-The function executes the query and writes the results to a CSV file using Apache Commons CSV library. Returns the number of rows written.
-
-The function requires appropriate file system permissions to write to the specified path.
-
-.Example 1: Basic CSV unload
-[sql]
-----
-select unloadcsv('select * from dsn81310.emp', '/u/user/emp.csv')
-  from sysibm.sysdummyu;
-----
-
-.Example 2: Excel format with header
-[sql]
-----
-select unloadcsv('select * from dsn81310.emp',
-                 '/u/user/emp.csv',
-                 'Excel',
-                 1208,
-                 'Y')
-  from sysibm.sysdummyu;
-----
-
-.Example 3: Custom format with options
-[sql]
-----
-select unloadcsv('select * from dsn81310.emp',
-                 '/u/user/emp.csv',
-                 'trim=true, quoteMode=NON_NUMERIC, nullString=(null)',
-                 1208,
-                 'Y')
-  from sysibm.sysdummyu;
-----
-
-NOTE: The function uses the Java WLM environment and requires the Apache Commons CSV library in the classpath.
 
 == Troubleshooting
 

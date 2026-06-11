@@ -475,8 +475,66 @@ select *
   from sysibm.systables
  where name in ('EMP', 'DEPT', 'PARTS', 'SUPPLIERS')
 ----
- 
 
+==== Two-Argument Form with Regular Expression
+
+The SPLIT function also supports a two-argument form that accepts a regular expression pattern as the delimiter:
+
+[sql,subs="quotes"]
+----
+split(_input_ varchar(32704), _regex_ varchar(1024))
+returns table (seqno integer, token varchar(32704))
+----
+
+input:: A character string to be split into tokens.
+
+regex:: A regular expression pattern that defines the token separator(s). The pattern follows XPath/XQuery regular expression syntax.
+
+[NOTE]
+====
+The two-argument form uses dynamic SQL internally and will not perform as fast as the single-argument form. The SELECT statement is prepared and executed dynamically for each invocation, which adds overhead. Use the single-argument comma-separated form when performance is critical and a simple comma delimiter is sufficient.
+====
+
+Example 3:
+
+Split a string using multiple delimiters (colon, semicolon, or pipe):
+
+[sql,subs="quotes"]
+----
+select *
+  from table(split('one:two;three|four', '[:\|;]'));
+----
+
+.Result:
+[options="header,autowidth"]
+|===
+|SEQNO|TOKEN
+|1    |one
+|2    |two
+|3    |three
+|4    |four
+|===
+
+Example 4:
+
+Split on whitespace characters:
+
+[sql,subs="quotes"]
+----
+select *
+  from table(split('alpha  beta   gamma', '\s+'));
+----
+
+.Result:
+[options="header,autowidth"]
+|===
+|SEQNO|TOKEN
+|1    |alpha
+|2    |beta
+|3    |gamma
+|===
+
+ 
 
 === SPRINTF
 

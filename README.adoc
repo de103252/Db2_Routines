@@ -201,7 +201,7 @@ select *
     OR 1 = 1 -- remove to see wrong results only
 ----
 
-[[:try_integer]]
+[[try_integer]]
 === TRY_INTEGER, TRY_SMALLINT, TRY_BIGINT
 
 The TRY___xxx__ functions try to convert the string value passed to an integer type; if the conversion fails, they return
@@ -942,7 +942,7 @@ GENERATED ALWAYS columns).
 crossload(_sourceschema_, _targetschema_)     
 ----
 
-[[:submit]]
+[[submit]]
 === SUBMIT and SUBMIT_T
 
 SUBMIT and SUBMIT_T submit a job to an internal reader, wait for job

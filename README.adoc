@@ -488,11 +488,13 @@ returns table (seqno integer, token varchar(32704))
 
 input:: A character string to be split into tokens.
 
-regex:: A regular expression pattern that defines the token separator(s). The pattern follows XPath/XQuery regular expression syntax.
+regex:: A regular expression pattern that defines the token separator(s). The pattern follows XPath/XQuery regular expression syntax as implemented in Db2 for z/OS. See the https://www.ibm.com/docs/en/db2-for-zos/13?topic=expressions-regular[Db2 for z/OS regular expression documentation] for details on supported syntax and features.
 
 [NOTE]
 ====
 The two-argument form uses dynamic SQL internally and will not perform as fast as the single-argument form. The SELECT statement is prepared and executed dynamically for each invocation, which adds overhead. Use the single-argument comma-separated form when performance is critical and a simple comma delimiter is sufficient.
+
+The regular expression capabilities are provided by Db2's XPath implementation, which has different syntax and features compared to other regex engines like Java or PCRE. Refer to the Db2 documentation for the specific regex features available.
 ====
 
 Example 3:
@@ -563,8 +565,13 @@ REGEX_MATCHES(_string-expression_, _pattern-expression_)
 
 string-expression:: An expression that specifies the string in which the search is to take place. This expression must be character string expression that can be converted to VARCHAR(32704).
 
-pattern-expression:: An expression that specifies the regular expression string that is the pattern for the search. 
-This expression must be character string expression that can be converted to VARCHAR(32704).
+pattern-expression:: An expression that specifies the regular expression string that is the pattern for the search.
+This expression must be character string expression that can be converted to VARCHAR(32704). The pattern follows Java regular expression syntax.
+
+[NOTE]
+====
+This function uses the Java regex engine. For complete documentation of supported syntax and features, see the https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/regex/Pattern.html[Java Pattern class documentation]. The Java regex engine provides more advanced features than the XPath regex engine used by the two-argument SPLIT function, including lookahead/lookbehind assertions, possessive quantifiers, and Unicode support.
+====
 
 === REGEX_REPLACE
 
@@ -577,7 +584,7 @@ REGEX_REPLACE(_string-expression_, _pattern-expression_, _replacement-expression
 
 string-expression:: An expression that specifies the string in which replacements are to be made. This expression must be a character string expression that can be converted to VARCHAR(32704).
 
-pattern-expression:: An expression that specifies the regular expression pattern to search for. This expression must be a character string expression that can be converted to VARCHAR(32704). The pattern follows Java regular expression syntax.
+pattern-expression:: An expression that specifies the regular expression pattern to search for. This expression must be a character string expression that can be converted to VARCHAR(32704). The pattern follows Java regular expression syntax. See the https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/regex/Pattern.html[Java Pattern class documentation] for complete syntax details.
 
 replacement-expression:: An expression that specifies the replacement string. This expression must be a character string expression that can be converted to VARCHAR(32704). Can include backreferences to captured groups using $1, $2, etc.
 
@@ -636,7 +643,12 @@ select regex_replace('5551234567', '(\d{3})(\d{3})(\d{4})', '($1) $2-$3')
 (555) 123-4567
 ----
 
-NOTE: The function uses Java's regular expression engine and caches compiled patterns for performance. The pattern cache holds up to 100 patterns using an LRU (Least Recently Used) eviction policy.
+[NOTE]
+====
+This function uses the Java regex engine and caches compiled patterns for performance. The pattern cache holds up to 100 patterns using an LRU (Least Recently Used) eviction policy.
+
+For complete documentation of supported syntax and features, see the https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/regex/Pattern.html[Java Pattern class documentation]. The Java regex engine provides more advanced features than the XPath regex engine used by the two-argument SPLIT function, including lookahead/lookbehind assertions, possessive quantifiers, and Unicode support.
+====
 
 === TO_ROMAN
 

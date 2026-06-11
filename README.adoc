@@ -655,7 +655,7 @@ The length of the returned binary data will be about 75% that of the input data.
 
 If called with a null input, returns the null value.
 
-[[:json2xml]]
+[[json2xml]]
 === JSON2XML
 
 Converts JSON data to XML format.
@@ -721,7 +721,7 @@ select customer_id, orderId, item
 
 NOTE: The function uses Java's JSON processing libraries and is deterministic.
 
-[[:gzip]]
+[[gzip]]
 === GZIP and GUNZIP
 
 Stored procedures for compressing and decompressing BLOB data using GZIP compression.

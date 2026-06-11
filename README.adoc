@@ -33,12 +33,16 @@ The following table shows an overview of all functions:
 |<<BASE64DECODE>>       |S    |Data types    |Decodes BASE64 format to binary data.                            |Java
 |<<BASE64ENCODE>>       |S    |Data types    |Encodes binary data to BASE64 format.                            |Java
 |<<CROSSLOAD>>          |S    |Utilities     |Copies data from one table to another.                           |SQL
+|<<DB2COMMAND>>         |S    |System        |Executes Db2 commands and returns output.                        |SQL
 |<<DB2UTILITY>>         |S    |Utilities     |Runs one or more Db2 utility statements.                         |SQL
 |<<EASTER>>             |S    |Date and time |Calculates the date of Easter for a given year.                  |SQL
 |<<FORMATTIMESTAMP>>    |S    |Date and time |Locale-sensitive formatting of a timestamp value.                |Java
-|<<GENERATE_SERIES>>    |T    |Data types    |Generate a series of values between a start and an end value, 
+|<<GENERATE_SERIES>>    |T    |Data types    |Generate a series of values between a start and an end value,
                                               with an optional step.                                           |SQL
+|xref::gzip[GZIP]       |P    |Data types    |Compresses BLOB data using GZIP compression.                     |Java
+|xref::gzip[GUNZIP]     |P    |Data types    |Decompresses GZIP-compressed BLOB data.                          |Java
 |<<HEXTOINT>>           |S    |Data types    |Converts a hex string to integer.                                |SQL
+|xref::json2xml[JSON2XML]|S   |Data types    |Converts JSON data to XML format.                                |Java
 |<<RACFPROFILE>>        |S    |System        |Returns the RACF profile that covers the input data set name.    |COBOL
 |<<READ_GENERIC_FILE>>  |T    |System        |Reads records from a flat file and returns them as a table.      |C
 |<<REGEX_MATCHES>>      |S    |Strings       |Matches a regular expression against a string.                   |Java or SQL
@@ -49,11 +53,13 @@ The following table shows an overview of all functions:
                                               format string.                                                   |Java
 |xref::submit[SUBMIT]   |S    |Utilities     |Submits a JCL job stream and returns the job output as a CLOB.   |SQL
 |xref::submit[SUBMIT_T] |T    |Utilities     |Submits a JCL job stream and returns the job output as a table.  |SQL
-|<<TO_ROMAN>>           |S    |Data types    |Converts a small integer to a Roman numeral. |SQL
+|<<TO_ROMAN>>           |S    |Data types    |Converts a small integer to a Roman numeral.                     |SQL
 a|xref::try_integer[TRY_INTEGER +
 TRY_SMALLINT +
-TRY_BIGINT]  
+TRY_BIGINT]
                         |S    |Data types    |Returns text converted to an integer or NULL on failure.         |SQL
+|<<UNLOADCSV>>          |S    |Utilities     |Unloads query results to CSV files.                              |Java
+|<<UPDATE_SYSPARM>>     |S    |System        |Updates Db2 system parameters dynamically.                       |SQL
 |<<VALIDATE_CONVERSION>> |T   |Data types    |Tests whether a given character string can be converted
                                               to a specified target type.                                      |SQL
 |===
@@ -649,8 +655,195 @@ The length of the returned binary data will be about 75% that of the input data.
 
 If called with a null input, returns the null value.
 
+[[:json2xml]]
+=== JSON2XML
+
+Converts JSON data to XML format.
+
+[sql,subs="quotes"]
+----
+json2xml(_json_)
+----
+
+json:: A JSON string (VARCHAR or CLOB) to be converted to XML.
+
+The function converts JSON data to XML format, making it possible to use [`XMLTABLE`](https://www.ibm.com/docs/en/db2-for-zos/13?topic=functions-xmltable) to extract data from JSON in relational format. This is particularly useful on Db2 for z/OS which does not have a native JSON_TABLE function.
+
+Returns an XML string representation of the JSON data.
+
+If called with a null input, returns the null value.
+
+.Example 1: Simple JSON to XML conversion
+[sql]
+----
+select json2xml('{"customer": {"id": 101, "name": "Alice"}}')
+  from sysibm.sysdummyu;
+----
+
+.Result:
+----
+<customer>
+  <id>101</id>
+  <name>Alice</name>
+</customer>
+----
+
+.Example 2: Using JSON2XML with XMLTABLE to extract relational data
+[sql]
+----
+with x(jsonx) as (
+  select json2xml('{
+    "customer": {
+      "id": 101,
+      "name": "Alice",
+      "orders": [
+        {"orderId": "A-555", "items": ["Laptop", "Mouse"]},
+        {"orderId": "B-777", "items": ["Monitor"]}
+      ]
+    }
+  }') from sysibm.sysdummyu
+)
+select customer_id, orderId, item
+  from x, xmltable('customer/orders/items' passing xmlparse(jsonx)
+                columns customer_id integer     path '../../id'
+                      , orderId     varchar(8)  path '../orderId'
+                      , item        varchar(32) path '.');
+----
+
+.Result:
+[options="header,autowidth"]
+|===
+|CUSTOMER_ID|ORDERID|ITEM
+|101        |A-555  |Laptop
+|101        |A-555  |Mouse
+|101        |B-777  |Monitor
+|===
+
+NOTE: The function uses Java's JSON processing libraries and is deterministic.
+
+[[:gzip]]
+=== GZIP and GUNZIP
+
+Stored procedures for compressing and decompressing BLOB data using GZIP compression.
+
+[sql,subs="quotes"]
+----
+call gzip(_input_, _result_)
+call gunzip(_input_, _result_)
+----
+
+input:: A BLOB containing the data to compress (for GZIP) or decompress (for GUNZIP).
+result:: An output parameter that receives the compressed or decompressed BLOB.
+
+The [`GZIP`](src/main/java/com/ibm/db2/gzip/GZip.java:78) procedure compresses BLOB data using GZIP compression algorithm, typically achieving 60-80% size reduction for text data. The [`GUNZIP`](src/main/java/com/ibm/db2/gzip/GZip.java:144) procedure decompresses GZIP-compressed BLOB data back to its original form.
+
+Both procedures have a maximum input size limit of 100MB to prevent memory exhaustion.
+
+If the input is null or invalid, an SQL error is raised.
+
+.Example 1: Compress data
+[sql]
+----
+declare input blob(1m);
+declare compressed blob(1m);
+
+set input = cast('This is a test string that will be compressed' as blob);
+call gzip(input, compressed);
+
+select length(input) as original_size,
+       length(compressed) as compressed_size,
+       decimal(length(compressed) * 100.0 / length(input), 5, 2) as compression_ratio
+  from sysibm.sysdummyu;
+----
+
+.Example 2: Compress and decompress
+[sql]
+----
+declare original blob(1m);
+declare compressed blob(1m);
+declare decompressed blob(1m);
+
+set original = cast('Test data' as blob);
+call gzip(original, compressed);
+call gunzip(compressed, decompressed);
+
+-- Verify data integrity
+select case when original = decompressed
+            then 'Data integrity verified'
+            else 'Data corruption detected'
+       end as status
+  from sysibm.sysdummyu;
+----
+
+.Example 3: Compress table data for archival
+[sql]
+----
+create table archived_data (
+  id integer,
+  compressed_content blob(10m),
+  original_size bigint,
+  compressed_size bigint
+);
+
+insert into archived_data
+select id,
+       (select result from table(
+         select cast(content as blob) as input
+           from original_table o2
+          where o2.id = o1.id
+       ) cross join lateral(
+         values(gzip(input))
+       ) as x(result)),
+       length(content),
+       length(result)
+  from original_table o1;
+----
+
+NOTE: These procedures use Java's GZIP implementation and require the Java WLM environment. The compression uses default compression level (6) which provides a good balance between speed and compression ratio.
 
 == System utility functions
+
+=== DB2COMMAND
+
+Executes Db2 commands and returns the command output.
+
+[sql,subs="quotes"]
+----
+db2command(_command_)
+db2command(_command_, _member_)
+db2command(_command_, _member_, _processing_type_)
+----
+
+command:: The Db2 command to execute (e.g., '-DISPLAY DATABASE').
+member:: (Optional) The data sharing member to execute the command on. If NULL, executes on the current member.
+processing_type:: (Optional) Processing type: 'GRP' for group-level commands, NULL for member-level commands.
+
+The function executes the specified Db2 command using the [`ADMIN_COMMAND_DB2`](https://www.ibm.com/docs/en/db2-for-zos/13?topic=procedures-admin-command-db2-stored-procedure) stored procedure and returns the command output as a CLOB.
+
+If the command execution fails (return code > 4), an error condition (SQLSTATE 5UA77) is raised.
+
+The result of the function is a CLOB containing the command output.
+
+.Example 1: Display database status
+[sql]
+----
+select db2command('-DISPLAY DATABASE(DSN8D13A)')
+  from sysibm.sysdummyu;
+----
+
+.Example 2: Display group information
+[sql]
+----
+select db2command('-DISPLAY GROUP', NULL, 'GRP')
+  from sysibm.sysdummyu;
+----
+
+.Example 3: Display thread information on specific member
+[sql]
+----
+select db2command('-DISPLAY THREAD(*)', 'DB2A')
+  from sysibm.sysdummyu;
+----
 
 === DB2UTILITY
 
@@ -935,7 +1128,56 @@ native data types:
 |`TIME`               |`PIC 99.99      DISPLAY`
 |===
 
+=== UNLOADCSV
 
+Unloads query results to CSV files on the z/OS file system.
+
+[sql,subs="quotes"]
+----
+unloadcsv(_statement_, _filename_)
+unloadcsv(_statement_, _filename_, _formatName_, _ccsid_, _printHeader_)
+----
+
+statement:: A SELECT statement that returns the data to be unloaded.
+filename:: The path to the output CSV file on the z/OS file system (e.g., '/u/user/data.csv').
+formatName:: (Optional) The CSV format name. Supported formats include: 'Default', 'Excel', 'RFC4180', 'MySQL', 'PostgreSQLCsv', 'Oracle', and others. Can also be a custom format string with options like `'trim=true, quoteMode=NON_NUMERIC, nullString=(null)'`.
+ccsid:: (Optional) The CCSID for the output file (e.g., 1208 for UTF-8). Default is the job's default CCSID.
+printHeader:: (Optional) 'Y' or '1' to include column headers, 'N' or '0' to exclude them. Default is no header.
+
+The function executes the query and writes the results to a CSV file using Apache Commons CSV library. Returns the number of rows written.
+
+The function requires appropriate file system permissions to write to the specified path.
+
+.Example 1: Basic CSV unload
+[sql]
+----
+select unloadcsv('select * from dsn81310.emp', '/u/user/emp.csv')
+  from sysibm.sysdummyu;
+----
+
+.Example 2: Excel format with header
+[sql]
+----
+select unloadcsv('select * from dsn81310.emp',
+                 '/u/user/emp.csv',
+                 'Excel',
+                 1208,
+                 'Y')
+  from sysibm.sysdummyu;
+----
+
+.Example 3: Custom format with options
+[sql]
+----
+select unloadcsv('select * from dsn81310.emp',
+                 '/u/user/emp.csv',
+                 'trim=true, quoteMode=NON_NUMERIC, nullString=(null)',
+                 1208,
+                 'Y')
+  from sysibm.sysdummyu;
+----
+
+NOTE: The function uses the Java WLM environment and requires the Apache Commons CSV library in the classpath.
 
 == Troubleshooting
 

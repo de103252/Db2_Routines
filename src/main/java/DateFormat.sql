@@ -1,3 +1,26 @@
+--==============================================================================
+-- DateFormat.sql - FORMATTIMESTAMP User-Defined Functions
+--==============================================================================
+-- Purpose: Format TIMESTAMP values using Java DateTimeFormatter patterns
+--
+-- Functions:
+--   FORMATTIMESTAMP(timestamp, format)
+--     - Formats timestamp using specified pattern with default locale
+--
+--   FORMATTIMESTAMP(timestamp, format, locale)
+--     - Formats timestamp using specified pattern and locale (e.g., 'de-DE')
+--
+-- Format Pattern Examples:
+--   'EEEE, d MMM yyyy HH:mm:ss'  -> Wednesday, 11 Jun 2026 12:32:17
+--   'yyyy-MM-dd HH:mm:ss'        -> 2026-06-11 12:32:17
+--   'dd/MM/yyyy'                 -> 11/06/2026
+--
+-- Locale Examples: 'en-US', 'de-DE', 'ja-JP', 'fr-FR'
+--
+-- Note: Apostrophes in format strings must be doubled for SQL and Java
+--       Example: '''It''''s ''H ''o''''clock''' for "It's 12 o'clock"
+--==============================================================================
+
  set current schema = 'SYSFUN';
  drop function FORMATTIMESTAMP(ts timestamp, format varchar(32704)) ; 
  create function FORMATTIMESTAMP(ts timestamp, format varchar(32704)) 
@@ -24,6 +47,8 @@
  asutime no limit 
  not secured 
  deterministic;
+
+-- Tests
 
 select formattimestamp(current timestamp, 'EEEE, d MMM yyyy HH:mm:ss') 
  from sysibm.sysdummyu; 
@@ -53,3 +78,36 @@ select locale,
 select formattimestamp(current timestamp, '''It''''s ''H ''o''''clock'' BBBB', 'en-US') 
   from sysibm.sysdummyu;
   
+-- Test involving other functions from this package:
+select sprintf('Heute ist %s, der %s.%s.%s, und es ist %d Uhr %s.',
+               pack(ccsid 1208, formattimestamp(current timestamp, 'EEEE', 'de-DE'),
+                                to-roman(day(current date)),
+                                to-roman(month(current date)),
+                                to-roman(year(current date)),
+                                hour(current timestamp),
+                                formattimestamp(current timestamp, 'BBBB', 'de-DE')))
+  from sysibm.sysdummyu;
+
+with
+locales(locale) as (
+  select trim(token) from table(split(
+    'ar, ar-AE, ar-BH, ar-DZ, ar-EG, ar-IQ, ar-JO, ar-KW, ar-LB, ar-LY,
+     ar-MA, ar-OM, ar-QA, ar-SA, ar-SD, ar-SY, ar-TN, ar-YE, be, be-BY, bg,
+     bg-BG, bn-IN, ca, ca-ES, cs, cs-CZ, da, da-DK, de, de-AT, de-CH, de-DE,
+     de-GR, de-LU, el, el-CY, el-GR, en, en-AU, en-BE, en-CA, en-GB, en-HK,
+     en-IE, en-IN, en-MT, en-NZ, en-PH, en-SG, en-US, en-ZA, es, es-AR,
+     es-BO, es-CL, es-CO, es-CR, es-CU, es-DO, es-EC, es-ES, es-GT, es-HN,
+     es-MX, es-NI, es-PA, es-PE, es-PR, es-PY, es-SV, es-US, es-UY, es-VE,
+     et, et-EE, fi, fi-FI, fr, fr-BE, fr-CA, fr-CH, fr-FR, fr-LU, ga, ga-IE,
+     gu, gu-IN, hi, hi-IN, hr, hr-HR, hu, hu-HU, in, in-ID, is, is-IS, it,
+     it-CH, it-IT, iw, iw-IL, ja, ja-JP, ja-JP-JP-#u-ca-japanese, kk, kk-KZ,
+     kn, kn-IN, ko, ko-KR, lt, lt-LT, lv, lv-LV, mk, mk-MK, ml-IN, mr, mr-IN,
+     ms, ms-MY, mt, mt-MT, nb-NO, nl, nl-BE, nl-NL, no, no-NO, no-NO-NY,
+     or-IN, pa, pa-IN, pl, pl-PL, pt, pt-BR, pt-PT, ro, ro-RO, ru, ru-RU, sh,
+     sh-CS, sk, sk-SK, sl, sl-SI, sq, sq-AL, sr, sr--#Latn, sr-BA,
+     sr-BA-#Latn, sr-CS, sr-ME, sr-ME-#Latn, sr-RS, sr-RS-#Latn, sv, sv-SE,
+     ta, ta-IN, te, te-IN, th, th-TH, th-TH-TH-#u-nu-thai, tr, tr-TR, uk,
+     uk-UA, vi, vi-VN, zh, zh-CN, zh-HK, zh-SG, zh-TW'))
+)
+select locale, formattimestamp(current timestamp, 'EEEE, d MMMM yyyy HH:mm:ss', locale) as today
+  from locales;

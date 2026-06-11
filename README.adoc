@@ -805,6 +805,83 @@ select unloadcsv('select * from dsn81310.emp',
 
 NOTE: The function uses the Java WLM environment and requires the Apache Commons CSV library in the classpath.
 
+== Reading flat files as tables
+
+=== READ_GENERIC_FILE
+
+This generic table UDF reads records from a flat file and returns them
+as relational rows, according to the column specification in the
+SELECT statement's typed-correlation-clause.
+
+[subs="quotes"]
+----
+READ_GENERIC_FILE(_filename_, _flags_)
+----
+
+filename:: The name of the file to be read. It must refer to a data set or a PDS(E) member.
+flags:: A short integer that contains flags which influence error handling.
+
+The file can be any kind of file that can be read using the C fread()
+function, including sequential files (fixed or variable), PDS(E) members
+(fixed or variable), and VSAM KSDS or ESDS.
+
+Here is an example of a SELECT statement using the UDF:
+
+.Example
+[source,sql]
+....
+SELECT *
+  FROM TABLE(READ_GENERIC_FILE('ADCDMST.FLAT.TEST')) T (
+          id     char(8)
+        , name   varchar(20)
+        , int64  bigint
+        , int32  integer
+        , int16  smallint
+        , dec7_2 decimal(13, 2)
+        , ddd    date
+        , tm     time
+        , rst    varbinary(80)
+        )
+....
+
+The UDF expects the flat file to be in a format that is in sync with the
+column specification in the typed correlation clause, that is, each
+supported SQL type corresponds with a native type that may be described,
+for example, with a COBOL picture clause.
+
+In this example, the records in file ADCDMST.FLAT.TEST are expected to
+be in the following format:
+
+[options="header,autowidth",cols=">,>,<"]
+|===
+|Offset|Length|Description
+|1|8|Alphanumeric bytes
+|9|20|Alphanumeric bytes
+|29|8|Binary doubleword
+|37|4|Binary fullword
+|41|2|Binary halfword
+|43|8|Date in zoned decimal format (YYYYMMDD)
+|51|4|Time time in zoned decimal format (hhmm)
+|55|n|Up to 80 alphanumeric bytes
+|===
+
+The following SQL types are supported, and correspond to the respective
+native data types:
+
+[cols=",",options="header",]
+|===
+|SQL type |COBOL type
+|`VARCHAR(_n_)`       |`PIC X(_n_)`
+|`BINARY(_n_)`        |`PIC X(_n_)`
+|`VARBINARY(_n_)`     |`PIC X(_n_)`
+|`SMALLINT`           |`PIC S9(4)      COMP-5`
+|`INTEGER`            |`PIC S9(9)      COMP-5`
+|`BIGINT`             |`PIC S9(18)    COMP-5`
+|`DECIMAL(_p_, _s_)` |`PIC S9(_p_)V(_s_)  COMP-3`
+|`DATE`               |`PIC 9999-99-99 DISPLAY`
+|`TIME`               |`PIC 99.99      DISPLAY`
+|===
+
 == Base64 encoding and decoding
 
 The two functions BASE64ENCODE and BASE64DECODE provide encoding and
@@ -1182,82 +1259,6 @@ select racfprofile('ADCDMST.JOB.CNTL', cast(NULL as char(6))) as racf_profile
 |===
 | RACF_PROFILE
 | ADCDMST.*
-|===
-
-
-=== READ_GENERIC_FILE
-
-This generic table UDF reads records from a flat file and returns them
-as relational rows, according to the column specification in the
-SELECT statement's typed-correlation-clause.
-
-[subs="quotes"]
-----
-READ_GENERIC_FILE(_filename_, _flags_)
-----
-
-filename:: The name of the file to be read. It must refer to a data set or a PDS(E) member.
-flags:: A short integer that contains flags which influence error handling.
-
-The file can be any kind of file that can be read using the C fread()
-function, including sequential files (fixed or variable), PDS(E) members
-(fixed or variable), and VSAM KSDS or ESDS.
-
-Here is an example of a SELECT statement using the UDF:
-
-.Example
-[source,sql]
-....
-SELECT *
-  FROM TABLE(READ_GENERIC_FILE('ADCDMST.FLAT.TEST')) T (
-          id     char(8)
-        , name   varchar(20)
-        , int64  bigint
-        , int32  integer
-        , int16  smallint
-        , dec7_2 decimal(13, 2)
-        , ddd    date
-        , tm     time
-        , rst    varbinary(80)
-        )
-....
-
-The UDF expects the flat file to be in a format that is in sync with the
-column specification in the typed correlation clause, that is, each
-supported SQL type corresponds with a native type that may be described,
-for example, with a COBOL picture clause.
-
-In this example, the records in file ADCDMST.FLAT.TEST are expected to
-be in the following format:
-
-[options="header,autowidth",cols=">,>,<"]
-|===
-|Offset|Length|Description
-|1|8|Alphanumeric bytes
-|9|20|Alphanumeric bytes 
-|29|8|Binary doubleword 
-|37|4|Binary fullword
-|41|2|Binary halfword 
-|43|8|Date in zoned decimal format (YYYYMMDD)
-|51|4|Time time in zoned decimal format (hhmm)
-|55|n|Up to 80 alphanumeric bytes
-|===
-
-The following SQL types are supported, and correspond to the respective
-native data types:
-
-[cols=",",options="header",]
-|===
-|SQL type |COBOL type
-|`VARCHAR(_n_)`       |`PIC X(_n_)`
-|`BINARY(_n_)`        |`PIC X(_n_)`
-|`VARBINARY(_n_)`     |`PIC X(_n_)`
-|`SMALLINT`           |`PIC S9(4)      COMP-5`
-|`INTEGER`            |`PIC S9(9)      COMP-5`
-|`BIGINT`             |`PIC S9(18)    COMP-5`
-|`DECIMAL(_p_, _s_)` |`PIC S9(_p_)V(_s_)  COMP-3`
-|`DATE`               |`PIC 9999-99-99 DISPLAY`
-|`TIME`               |`PIC 99.99      DISPLAY`
 |===
 
 == Troubleshooting

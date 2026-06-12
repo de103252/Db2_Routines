@@ -7,6 +7,17 @@
     <properties>
         <main.class>com.ibm.db2.csv.Unload</main.class>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        
+        <!-- Db2 Deployment Configuration Properties -->
+        <!-- These can be overridden via command line: -Ddb2.host=myhost -->
+        <db2.host></db2.host>
+        <db2.port></db2.port>
+        <db2.database></db2.database>
+        <db2.user></db2.user>
+        <db2.password></db2.password>
+        <db2.jar.id></db2.jar.id>
+        <db2.wlm.env></db2.wlm.env>
+        <db2.jar.file>${project.build.directory}/routines.jar</db2.jar.file>
     </properties>
     <build>
         <sourceDirectory>src/main/java</sourceDirectory>
@@ -55,7 +66,7 @@
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>RELEASE</version>
+            <version>20240303</version>
         </dependency>
 
         <dependency>
@@ -102,8 +113,53 @@
             <groupId>com.ibm.db2</groupId>
             <artifactId>jcc</artifactId>
             <version>12.1.4.0</version>
-            <scope>runtime</scope>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
+
+    <!-- Maven Profiles for Db2 Deployment -->
+    <profiles>
+        <!-- Profile for automated Db2 deployment -->
+        <profile>
+            <id>db2-deploy</id>
+            <build>
+                <plugins>
+                    <!-- Exec Maven Plugin for running Deploy utility -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>deploy-to-db2</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <mainClass>com.ibm.db2.deploy.Deploy</mainClass>
+                                    <arguments>
+                                        <argument>--jdbc-url</argument>
+                                        <argument>jdbc:db2://${db2.host}:${db2.port}/${db2.database}</argument>
+                                        <argument>--user</argument>
+                                        <argument>${db2.user}</argument>
+                                        <argument>--password</argument>
+                                        <argument>${db2.password}</argument>
+                                        <argument>--jar</argument>
+                                        <argument>${db2.jar.file}</argument>
+                                        <argument>--id</argument>
+                                        <argument>${db2.jar.id}</argument>
+                                        <argument>--wlm</argument>
+                                        <argument>${db2.wlm.env}</argument>
+                                    </arguments>
+                                    <classpathScope>compile</classpathScope>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

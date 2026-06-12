@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Maven Settings Template for Db2 Deployment
+  
+  Copy this file to ~/.m2/settings.xml (Linux/Mac) or %USERPROFILE%\.m2\settings.xml (Windows)
+  and customize with your environment-specific values.
+  
+  This approach keeps sensitive credentials out of the project repository.
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                              http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+  <profiles>
+    <!-- Development Environment Profile -->
+    <profile>
+      <id>db2-dev</id>
+      <properties>
+        <db2.host>dev-mainframe.company.com</db2.host>
+        <db2.port>5045</db2.port>
+        <db2.database>DEVDB</db2.database>
+        <db2.user>devuser</db2.user>
+        <db2.password>dev_password_here</db2.password>
+        <db2.jar.id>DEVSCHEMA.ROUTINES</db2.jar.id>
+        <db2.wlm.env>DEVWLM</db2.wlm.env>
+      </properties>
+    </profile>
+
+    <!-- Test Environment Profile -->
+    <profile>
+      <id>db2-test</id>
+      <properties>
+        <db2.host>test-mainframe.company.com</db2.host>
+        <db2.port>5045</db2.port>
+        <db2.database>TESTDB</db2.database>
+        <db2.user>testuser</db2.user>
+        <db2.password>test_password_here</db2.password>
+        <db2.jar.id>TESTSCHEMA.ROUTINES</db2.jar.id>
+        <db2.wlm.env>TESTWLM</db2.wlm.env>
+      </properties>
+    </profile>
+
+    <!-- Production Environment Profile -->
+    <profile>
+      <id>db2-prod</id>
+      <properties>
+        <db2.host>prod-mainframe.company.com</db2.host>
+        <db2.port>5045</db2.port>
+        <db2.database>PRODDB</db2.database>
+        <db2.user>produser</db2.user>
+        <!-- For production, consider using encrypted passwords or environment variables -->
+        <db2.password>${env.DB2_PROD_PASSWORD}</db2.password>
+        <db2.jar.id>PRODSCHEMA.ROUTINES</db2.jar.id>
+        <db2.wlm.env>PRODWLM</db2.wlm.env>
+      </properties>
+    </profile>
+  </profiles>
+
+  <!-- Optional: Activate a default profile -->
+  <activeProfiles>
+    <!-- Uncomment to activate a profile by default -->
+    <!-- <activeProfile>db2-dev</activeProfile> -->
+  </activeProfiles>
+
+  <!--
+    USAGE EXAMPLES:
+    
+    1. Using a profile from settings.xml:
+       mvn clean install -Pdb2-deploy,db2-dev
+    
+    2. Using multiple profiles:
+       mvn clean install -Pdb2-deploy,db2-test
+    
+    3. Override specific properties:
+       mvn clean install -Pdb2-deploy,db2-dev -Ddb2.password=newpassword
+    
+    4. Production deployment with environment variable:
+       export DB2_PROD_PASSWORD=secret
+       mvn clean install -Pdb2-deploy,db2-prod
+    
+    SECURITY NOTES:
+    
+    1. Protect this file with appropriate permissions:
+       chmod 600 ~/.m2/settings.xml (Linux/Mac)
+    
+    2. Never commit settings.xml to version control
+    
+    3. For production, use encrypted passwords:
+       mvn --encrypt-master-password
+       mvn --encrypt-password
+    
+    4. Consider using environment variables for sensitive data:
+       <db2.password>${env.DB2_PASSWORD}</db2.password>
+    
+    5. For CI/CD, use secrets management:
+       - GitHub Secrets
+       - Jenkins Credentials
+       - Azure Key Vault
+       - AWS Secrets Manager
+  -->
+
+</settings>
+
+<!-- Made with Bob -->

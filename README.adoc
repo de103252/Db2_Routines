@@ -78,7 +78,7 @@ TRY_BIGINT]
 The installation of each function differs on the function implementation.
 
 The functions can be installed into an installation-defined schema or into the Db2 standard SYSFUN schema.
-Installing into SYSFUN has the advantage that you do not need to qualify the function name or set the 
+Installing into SYSFUN has the advantage that you do not need to qualify the function name or set the
 CURRENT FUNCTION PATH special register;
 it has the disadvantage of risking incompatibilities if a future version of Db2
 defines built-in functions with the same name.
@@ -90,7 +90,351 @@ placed in a library that is part of the WLM environment's STEPLIB concatenation.
 
 External functions written in *Java* can be installed by creating a Jar and placing that Jar
 either into the CLASSPATH of the Java Virtual Machine running in your Java WLM environment,
-or by placing the Jar into the Db2 catalog using the SQLJ_DB2_INSTALL_JAR stored procedure. 
+or by placing the Jar into the Db2 catalog using the SQLJ_DB2_INSTALL_JAR stored procedure.
+
+=== Automated Maven Deployment for Java Stored Procedures
+
+The Java stored procedures in this project can be automatically built and deployed to Db2 for z/OS using Maven with the `db2-deploy` profile. This automated approach handles the complete deployment workflow including JAR creation, database installation, and WLM environment refresh.
+
+==== Prerequisites
+
+Before deploying via Maven, ensure you have:
+
+* *Maven 3.6 or higher* installed and accessible in your PATH
+* *Java 8 or higher* (JDK) for compilation
+* *Network access* to your Db2 for z/OS system via JDBC
+* *Valid Db2 credentials* with the following privileges:
+** `INSTALL_JAR` privilege to install JARs into the database catalog
+** `CREATE PROCEDURE` privilege in the target schema
+** Authority to refresh the WLM environment
+* *Db2 JDBC driver* (automatically included as a Maven dependency)
+
+==== Maven Command Syntax
+
+To build and deploy the Java stored procedures, activate the `db2-deploy` Maven profile using the `-P` flag:
+
+[source,bash]
+----
+mvn clean install -Pdb2-deploy \
+  -Ddb2.host=your-mainframe-host \
+  -Ddb2.port=5045 \
+  -Ddb2.database=YOUR_DATABASE \
+  -Ddb2.user=your-username \
+  -Ddb2.password=your-password \
+  -Ddb2.jar.id=YOUR_SCHEMA.ROUTINES \
+  -Ddb2.wlm.env=YOUR_WLM_ENV
+----
+
+For Windows systems using Command Prompt, use `^` for line continuation:
+
+[source,cmd]
+----
+mvn clean install -Pdb2-deploy ^
+  -Ddb2.host=your-mainframe-host ^
+  -Ddb2.port=5045 ^
+  -Ddb2.database=YOUR_DATABASE ^
+  -Ddb2.user=your-username ^
+  -Ddb2.password=your-password ^
+  -Ddb2.jar.id=YOUR_SCHEMA.ROUTINES ^
+  -Ddb2.wlm.env=YOUR_WLM_ENV
+----
+
+==== Configuration Properties
+
+The deployment process uses the following configuration properties:
+
+[cols="1,2,1", options="header"]
+|===
+|Property |Description |Example Value
+
+|`db2.host`
+|Hostname or IP address of the Db2 for z/OS system
+|`mainframe.company.com`
+
+|`db2.port`
+|JDBC port number for Db2 connectivity
+|`5045`
+
+|`db2.database`
+|Db2 database location name
+|`DALLASD`
+
+|`db2.user`
+|Db2 user ID with deployment privileges
+|`ADCDMST`
+
+|`db2.password`
+|Password for the Db2 user
+|`your-password`
+
+|`db2.jar.id`
+|Qualified JAR identifier in format SCHEMA.JARNAME
+|`ADCDMST.ROUTINES`
+
+|`db2.wlm.env`
+|WLM environment name for Java stored procedures
+|`DBDGENVJ`
+|===
+
+==== Configuration Methods
+
+You can configure deployment properties using several approaches:
+
+===== 1. Command Line Parameters (Recommended for Ad-Hoc Deployments)
+
+Pass properties directly on the command line:
+
+[source,bash]
+----
+mvn clean install -Pdb2-deploy \
+  -Ddb2.host=mainframe.company.com \
+  -Ddb2.user=myuser \
+  -Ddb2.password=mypassword
+----
+
+===== 2. Maven Settings File (Recommended for Multiple Environments)
+
+Create or edit `~/.m2/settings.xml` (Linux/Mac) or `%USERPROFILE%\.m2\settings.xml` (Windows):
+
+[source,xml]
+----
+<settings>
+  <profiles>
+    <profile>
+      <id>db2-dev</id>
+      <properties>
+        <db2.host>dev-mainframe.company.com</db2.host>
+        <db2.port>5045</db2.port>
+        <db2.database>DEVDB</db2.database>
+        <db2.user>devuser</db2.user>
+        <db2.password>dev_password</db2.password>
+        <db2.jar.id>DEVSCHEMA.ROUTINES</db2.jar.id>
+        <db2.wlm.env>DEVWLM</db2.wlm.env>
+      </properties>
+    </profile>
+    
+    <profile>
+      <id>db2-prod</id>
+      <properties>
+        <db2.host>prod-mainframe.company.com</db2.host>
+        <db2.port>5045</db2.port>
+        <db2.database>PRODDB</db2.database>
+        <db2.user>produser</db2.user>
+        <db2.password>${env.DB2_PROD_PASSWORD}</db2.password>
+        <db2.jar.id>PRODSCHEMA.ROUTINES</db2.jar.id>
+        <db2.wlm.env>PRODWLM</db2.wlm.env>
+      </properties>
+    </profile>
+  </profiles>
+</settings>
+----
+
+Then deploy using:
+
+[source,bash]
+----
+mvn clean install -Pdb2-deploy,db2-dev
+----
+
+A template settings file is provided in link:settings.xml.template[`settings.xml.template`].
+
+===== 3. Environment Variables (Recommended for CI/CD)
+
+Set environment variables and reference them in the Maven command:
+
+[source,bash]
+----
+export DB2_HOST=mainframe.company.com
+export DB2_USER=myuser
+export DB2_PASSWORD=mypassword
+
+mvn clean install -Pdb2-deploy \
+  -Ddb2.host=${DB2_HOST} \
+  -Ddb2.user=${DB2_USER} \
+  -Ddb2.password=${DB2_PASSWORD}
+----
+
+===== 4. Project POM Defaults (For Development Only)
+
+The `pom.xml` includes default values that can be used for local development. *Never commit production credentials to the POM file.*
+
+==== Deployment Process Flow
+
+When you execute the Maven deployment command, the following automated workflow occurs:
+
+1. *Compilation Phase*
+   - Maven compiles all Java source files in `src/main/java`
+   - Runs unit tests (unless `-DskipTests` is specified)
+   - Validates code quality and dependencies
+
+2. *Package Phase*
+   - Creates a JAR file with all dependencies: `target/routines.jar`
+   - Includes all required libraries (JSON, Apache Commons, etc.)
+   - Configures the JAR manifest with proper classpath entries
+
+3. *Install Phase* (with `db2-deploy` profile active)
+   - Executes the [`com.ibm.db2.deploy.Deploy`](src/main/java/com/ibm/db2/deploy/Deploy.java) utility
+   - Establishes JDBC connection to Db2 for z/OS
+   - Attempts to replace existing JAR using `SQLJ.REPLACE_JAR`
+   - If JAR doesn't exist, installs new JAR using `SQLJ.INSTALL_JAR`
+   - Refreshes the specified WLM environment
+   - Commits the transaction
+
+4. *Artifacts Installed*
+   - JAR file stored in Db2 catalog table `SYSIBM.SYSJAROBJECTS`
+   - JAR identifier: As specified in `db2.jar.id` property
+   - JAR classes available to stored procedures in the WLM environment
+
+Expected console output:
+
+[source]
+----
+[INFO] --- exec-maven-plugin:3.1.0:java (deploy-to-db2) @ Db2_Routines ---
+Connecting to database...
+  JDBC URL: jdbc:db2://mainframe:5045/DALLASD
+  Username: ADCDMST
+Connected successfully.
+
+Deploying JAR file...
+  Local file: target/routines.jar
+  Target ID:  ADCDMST.ROUTINES
+  Attempting to replace existing JAR...
+  JAR replaced successfully.
+
+Refreshing WLM environment: DBDGENVJ
+  WLM environment refreshed successfully.
+
+Deployment completed successfully.
+Database connection closed.
+[INFO] BUILD SUCCESS
+----
+
+==== Troubleshooting Common Deployment Issues
+
+===== Connection Failures
+
+*Symptom:* `Connection refused` or `Network error`
+
+*Solutions:*
+
+* Verify the hostname and port are correct
+* Test network connectivity: `ping your-mainframe-host`
+* Ensure firewall rules allow JDBC connections on the specified port
+* Confirm the Db2 subsystem is active and accepting connections
+* Check if DDF (Distributed Data Facility) is started on Db2
+
+===== Authentication Errors
+
+*Symptom:* `Invalid authorization specification` (SQLCODE: -551)
+
+*Solutions:*
+
+* Verify username and password are correct
+* Ensure the user has `INSTALL_JAR` privilege:
++
+[source,sql]
+----
+GRANT EXECUTE ON PROCEDURE SQLJ.INSTALL_JAR TO your-user;
+GRANT EXECUTE ON PROCEDURE SQLJ.REPLACE_JAR TO your-user;
+----
+
+* Confirm the user has authority to create procedures in the target schema
+* Check if the user has authority to refresh the WLM environment
+
+===== JAR Installation Errors
+
+*Symptom:* `JAR already exists` or `Cannot replace JAR`
+
+*Solutions:*
+
+* The deployment utility automatically attempts `REPLACE_JAR` first
+* If manual intervention is needed, remove the JAR manually:
++
+[source,sql]
+----
+CALL SQLJ.REMOVE_JAR('SCHEMA.JARNAME', 0);
+----
+
+* Verify no active procedures are using the JAR
+* Check for locks on the JAR in `SYSIBM.SYSJAROBJECTS`
+
+===== WLM Environment Issues
+
+*Symptom:* `WLM refresh failed` or `Environment not found`
+
+*Solutions:*
+
+* Verify the WLM environment name is correct (case-sensitive)
+* Check that the WLM environment is defined in Db2:
++
+[source,sql]
+----
+SELECT * FROM SYSIBM.SYSWLMENV WHERE NAME = 'YOUR_WLM_ENV';
+----
+
+* Ensure the user has authority to refresh WLM environments
+* Verify the WLM environment is started and available
+
+===== Maven Not Found (Windows)
+
+*Symptom:* `'mvn' is not recognized as an internal or external command`
+
+*Solutions:*
+
+* Use the full path to Maven:
++
+[source,cmd]
+----
+C:\path\to\apache-maven\bin\mvn.cmd clean install -Pdb2-deploy
+----
+
+* Add Maven's `bin` directory to your PATH environment variable
+* Use the provided `deploy.bat` script which handles path resolution
+
+===== Build Failures
+
+*Symptom:* Compilation errors or test failures
+
+*Solutions:*
+
+* Ensure Java 8 or higher is installed: `java -version`
+* Clean the build directory: `mvn clean`
+* Skip tests if needed: `mvn clean install -Pdb2-deploy -DskipTests`
+* Check for dependency resolution issues: `mvn dependency:tree`
+
+==== Security Best Practices
+
+WARNING: Never commit passwords or sensitive credentials to version control.
+
+* *Use environment variables* for passwords in CI/CD pipelines
+* *Leverage Maven password encryption* for settings.xml:
++
+[source,bash]
+----
+mvn --encrypt-master-password
+mvn --encrypt-password
+----
+
+* *Protect your settings.xml* file with appropriate permissions:
++
+[source,bash]
+----
+chmod 600 ~/.m2/settings.xml  # Linux/Mac
+----
+
+* *Use CI/CD secrets management* (GitHub Secrets, Jenkins Credentials, etc.)
+* *Rotate credentials regularly* and use least-privilege principles
+* *Audit deployment logs* for security compliance
+
+==== Additional Resources
+
+For more detailed information, see:
+
+* link:QUICKSTART_DEPLOYMENT.md[Quick Start Deployment Guide] - Get started in 5 minutes
+* link:DEPLOYMENT.md[Complete Deployment Documentation] - Comprehensive deployment guide
+* link:deploy.bat[`deploy.bat`] - Windows deployment script with environment profiles
+* link:settings.xml.template[`settings.xml.template`] - Maven settings template
+* link:src/main/java/com/ibm/db2/deploy/Deploy.java[`Deploy.java`] - Deployment utility source code
 
 == Date and time
 

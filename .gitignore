@@ -9,3 +9,18 @@
 *.bak
 .*.bak
 ~*.pptx
+
+# Maven and deployment configuration
+settings.xml
+deployment.properties
+*.properties
+
+# Sensitive credentials
+*password*
+*credentials*
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws

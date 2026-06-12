@@ -1,9 +1,10 @@
 set current schema = 'SYSFUN';
 
-DROP FUNCTION READ_GENERIC_FILE(FILENAME VARCHAR(54));
+DROP FUNCTION READ_GENERIC_FILE(FILENAME VARCHAR(54), FLAGS INTEGER);
 
 CREATE FUNCTION READ_GENERIC_FILE(FILENAME VARCHAR(54), FLAGS INTEGER)
   RETURNS GENERIC TABLE
+    SPECIFIC READ_GENERIC_FILE
     LANGUAGE C
     SECURITY USER
     EXTERNAL NAME RDGENFIL
@@ -25,14 +26,15 @@ CREATE FUNCTION READ_GENERIC_FILE(FILENAME VARCHAR(54), FLAGS INTEGER)
  ;
 
 SELECT *
-  FROM TABLE(READ_GENERIC_FILE('ADCDMST.FLAT.FILE', 0)) T (
-          id     char(8)
-        , name   char(35)
---      , int64  bigint
---      , int32  integer
---      , int16  smallint
---      , dec7_2 decimal(13, 2)
---      , ddd    date
---      , tm     time
---      , rst    varbinary(80)
+  FROM TABLE(READ_GENERIC_FILE('ADCDMST.FLATFILE.BIN', 0)) T (
+          id     char(8)         -- col 1
+       , name   char(35)         -- col 9
+       , int64  bigint           -- col 44
+       , int32  INTEGER          -- col 52
+       , int16  SMALLINT         -- col 56
+       , ddd    date             -- col 58
+       , tm     time             -- col 66
+       , salary decimal(9, 2)    -- col 70
+       , rst    varbinary(80)    -- col 75
         )
+;

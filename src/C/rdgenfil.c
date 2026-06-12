@@ -1,4 +1,3 @@
-#pragma langlvl(EXTC99)
 /*********************************************************************
  *
  * This generic table UDF reads records from a flat file and converts
@@ -70,7 +69,7 @@
  *   EXTERNAL ACTION
  *   DISALLOW PARALLEL
  *   SCRATCHPAD 16
- *   WLM ENVIRONMENT DBDGENVG
+ *   WLM ENVIRONMENT DBCGENVG
  *   STAY RESIDENT YES
  *   RUN OPTIONS 'POSIX(ON),XPLINK(ON)'
  *   -- for debug:
@@ -80,7 +79,7 @@
  * Compile the source code like this:
  *
  * c99 -Wc,'XPLINK,LANGLVL(EXTC99)' -g -o "//'load.lib(RDGENFIL)'" \
- *     -I "//'DSND10.SDSNC.h'" \
+ *     -I "//'DSNC10.SDSNC.h'" \
  *     rdgenfil.c
  *
  * Where load.lib is a load library in the WLM address space's STEPLIB
@@ -99,6 +98,16 @@
  * //SYSIN DD *
  *
  *********************************************************************/
+
+#pragma langlvl(EXTC99)
+
+#ifdef DEBUG
+#define debug_printf(fmt, ...) \
+  do { if (0) fprintf(stderr, fmt, __VA_ARGS__); } while (0)
+#else
+#define debug_printf(fmt, ...)
+#endif
+
 
 #include <dynit.h>
 #include <inttypes.h>
@@ -161,15 +170,15 @@ dynalloc_file(struct sqlchar *filename, char *sqlstate, char *msgtext)
   if (dynalloc(&ip) == 0) {
     fp = fopen(ddname, "rb,type=record,noseek");
     if (fp == NULL) {
-      sprintf(msgtext, "%*s open error %d-%d",
-                       dsname, errno, __errno2());
+      sprintf(msgtext, "%*s open error %x",
+                       dsname, ip.__errcode);
       strcpy(sqlstate, SQLSTATE_OPEN_ERROR);
     }
   } else {
     if (ip.__errcode == 528) {
       sprintf(msgtext, "Data set %s in use", dsname);
     } else {
-      sprintf(msgtext, "Allocation error %d-%d", ip.__errcode,
+      sprintf(msgtext, "Allocation error %x-%x", ip.__errcode,
           ip.__infocode);
     }
     strcpy(sqlstate, SQLSTATE_ALLOC_ERROR);
@@ -338,6 +347,7 @@ static void build_row(sqlint64       recno,
           memcpy(datestr, buf + offset, 4);
           memcpy(datestr + 5, buf + offset + 4, 2);
           memcpy(datestr + 8, buf + offset + 6, 2);
+          debug_printf("Date string: %s\n", datestr);
           if (is_date(datestr)) {
             memcpy(otdesc->coldata[i], datestr, sizeof datestr - 1);
           } else if (flags & NULL_ON_INVALID_DATA) {
@@ -396,13 +406,15 @@ static size_t fetch_record(struct scr    *scratchpad,
   char buf[32767];
   size_t reclen = fread(buf, 1, sizeof buf, fp);
 
+  debug_printf("recno %d, fread returned %d\n", scratchpad->recno, (int) reclen);
+
   if (ferror(fp)) {
     strcpy(sqlstate, SQLSTATE_READ_ERROR);
     sprintf(msgtext, "Error reading record: %d reason %d", errno,
         __errno2());
     return 0;
   }
-  if (reclen == 0) {
+  if (feof(fp)) {
     strcpy(sqlstate, "02000");
   } else {
     build_row(++scratchpad->recno, buf, reclen, otdesc,
@@ -442,6 +454,7 @@ void RDGENFIL(struct sqlchar   *filename,
     case SQLUDF_TF_FETCH:
       // Read next record from input data set
       fetch_record(scratchpad, otdesc, sqlstate, msgtext, flags);
+      debug_printf("SQLSTATE: %s\n", sqlstate);
       break;
     case SQLUDF_TF_CLOSE:
     default:

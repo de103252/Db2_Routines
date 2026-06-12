@@ -4,17 +4,17 @@
 -- Execute RUNSTATS utility against tables or tablespaces with pattern matching.
 --
 -- Features:
--- - Pattern-based table or tablespace selection
--- - Supports schema and name wildcards
+-- - Pattern-based table or tablespace selection (regular expressions)
 -- - Custom RUNSTATS statement options
 -- - Batch execution across multiple objects
 -- - Returns highest return code from all executions
+-- - Returns utility output in global variable db2util.utility_output
 --
 -- Parameters:
 -- - what: 'TABLES' or 'DATABASE' (tablespace)
--- - schema_pattern: Schema name pattern (supports wildcards)
--- - name_pattern: Table/tablespace name pattern (supports wildcards)
--- - statement: RUNSTATS options string
+-- - schema_pattern: Schema name pattern (supports regular expressions)
+-- - name_pattern: Table/tablespace name pattern (supports regular expressions)
+-- - statement: RUNSTATS options string (default: 'USE PROFILE SORTDEVT SYSALLDA')
 --
 -- Usage Examples:
 -- - All tables in schema: SELECT runstats('TABLES', 'MYSCHEMA', '%', 'TABLESPACE ALL') FROM SYSIBM.SYSDUMMYU
@@ -63,10 +63,13 @@ begin
           || coalesce(nullif(statement, ''), ' USE PROFILE SORTDEVT SYSALLDA')
     into utstmt
     from sysibm.systables
-   where creator like schema_pattern
-     and type = 'T'
-     and (nullif(name_pattern, '') is null
-          or name like name_pattern);
+   where type = 'T'
+         -- and creator like schema_pattern
+         and regex_matches(creator, schema_pattern) = 1
+         and (   nullif(name_pattern, '') is null
+              -- or name like name_pattern
+              or regex_matches(name, name_pattern) = 1
+             );
   when 'DATABASE' then
   select 'LISTDEF RSLIST ' || 
          case when nullif(name_pattern, '') is null then
@@ -83,14 +86,19 @@ begin
     signal sqlstate '77777'       
        set message_text = 
         'Value of argument 1 is not valid';
-    
   end case;
   return db2utility(utstmt);
 end
 #
 
-select runstats('DATABASE', 'DSN8D13L', '', '') 
-     , utility_output
+--<ScriptOptions statementTerminator=";"/>
+--#SET TERMINATOR ;
+
+select runstats('TABLES', 'DSN81310', '^(EMP|DEPT)$', '') 
   from sysibm.sysdummyu
-#
+;
+
+select db2util.utility_output
+  from sysibm.sysdummyu
+;
 

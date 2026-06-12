@@ -24,3 +24,4 @@ deployment.properties
 *.iml
 *.ipr
 *.iws
+zapp.yaml

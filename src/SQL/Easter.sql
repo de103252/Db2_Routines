@@ -62,28 +62,29 @@ end
 -- Test
 -----------------------------------------------------------------------
 
+--<ScriptOptions statementTerminator=";"/>
+--#SET TERMINATOR ;
+
 -- When was Easter this year?
 select easter(year(current date)) as easter
   from sysibm.sysdummyu
-#
+;
 
 -- Show Easter Sundays between 2000 and 2050.
 -- This uses the generate_series function defined next door.
 select easter(value) as "Easter Sunday"
   from table(generate_series(2000, 2050))
-#
+;
 
 -- Years before 1583 not allowed, will raise an SQL error.
-select easter(1582) from sysibm.sysdummyu
-#
+select easter(1582) 
+  from sysibm.sysdummyu
+;
 
-SELECT easter(cast(null as integer)) FROM sysibm.sysdummyu;
+select easter(cast(null as integer))
+  from sysibm.sysdummyu
+;
 
-
--- ####################################################################
--- # Basic with SELECT statement
--- # See https://www.ibm.com/docs/en/db2-for-zos/13?topic=queries-select-statement for complete syntax.
--- ####################################################################
 with
 jahre as (
   select value as jahr
@@ -96,3 +97,4 @@ select to_roman(jahr) as "Jahr"
      , formattimestamp(ostern + 49 days, 'd. MMMM', 'de-DE') as "Pfingsten"
      , formattimestamp(ostern + 60 days, 'd. MMMM', 'de-DE') as "Fronleichnam"
   from jahre
+;

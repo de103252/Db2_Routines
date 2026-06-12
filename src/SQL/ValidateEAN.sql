@@ -1,16 +1,31 @@
--- validate_ean: Validates EAN-13 (European Article Number) barcodes
+-- =====================================================================
+-- EAN-13 BARCODE VALIDATION FUNCTION
+-- =====================================================================
+-- Validate EAN-13 (European Article Number) barcode checksums.
 --
--- Argument: ean (decimal(13)) - A 13-digit EAN barcode number
--- Returns:  integer - 1 if valid, 0 if invalid
+-- Features:
+-- - Validates 13-digit EAN barcodes
+-- - Calculates checksum using alternating weights (3 and 1)
+-- - Compares calculated checksum against embedded check digit
+-- - Returns 1 if valid, 0 if invalid
+-- - Deterministic with no external actions
+-- - Returns NULL on NULL input
 --
--- The function calculates the checksum using alternating weights (3 and 1)
--- and compares it against the embedded check digit (rightmost digit).
+-- Algorithm:
+-- 1. Extract rightmost digit as check digit
+-- 2. Calculate weighted sum of remaining 12 digits (alternating 3,1,3,1...)
+-- 3. Check digit should make total sum divisible by 10
 --
--- Following comment lines tell Data Studio resp. SPUFI
--- to use # as statement terminator
---
--- <ScriptOptions statementTerminator="#"/>
--- #SET TERMINATOR #
+-- Usage Examples:
+-- - Valid EAN: SELECT validate_ean(4003994155485) FROM SYSIBM.SYSDUMMYU  -- Returns 1
+-- - Invalid EAN: SELECT validate_ean(1234567890123) FROM SYSIBM.SYSDUMMYU  -- Returns 0
+-- - NULL input: SELECT validate_ean(NULL) FROM SYSIBM.SYSDUMMYU  -- Returns NULL
+-- =====================================================================
+
+--<ScriptOptions statementTerminator="#"/>
+--#SET TERMINATOR #
+
+SET CURRENT SCHEMA = 'SYSFUN'#
 
 drop function validate_ean(ean decimal(13))#
 

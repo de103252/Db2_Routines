@@ -1,13 +1,34 @@
-/*
-The SPLIT function splits an input string 
-into tokens separated by commas.
-Unfortunately, as there is no way to "escape" commas,
-the input tokens cannot contain any.
-*/
+-- =====================================================================
+-- STRING SPLIT TABLE FUNCTION
+-- =====================================================================
+-- Split comma-separated string into table of tokens.
+--
+-- Features:
+-- - Returns table with sequence number and token columns
+-- - Supports VARCHAR and CLOB input types
+-- - Uses XQuery fn:tokenize for parsing
+-- - Escaped commas (\,) are preserved in tokens
+-- - Returns tokens in original order with sequence numbers
+--
+-- Functions:
+-- - split(input VARCHAR(32704)): Split VARCHAR with escaped comma support
+-- - split(input CLOB): Split CLOB without escape support
+--
+-- Limitations:
+-- - VARCHAR version: Escaped commas (\,) are preserved
+-- - CLOB version: No escape mechanism, tokens cannot contain commas
+--
+-- Usage Examples:
+-- - Basic split: SELECT * FROM TABLE(split('apple,banana,cherry'))
+-- - With escapes: SELECT * FROM TABLE(split('item1,item\,with\,commas,item3'))
+-- - CLOB split: SELECT * FROM TABLE(split(CAST('a,b,c' AS CLOB)))
+-- =====================================================================
 
-drop function sysfun.split(input varchar(32704));
+SET CURRENT SCHEMA = 'SYSFUN'#
 
-create function sysfun.split(input varchar(32704))
+drop function split(input varchar(32704))#
+
+create function split(input varchar(32704))
 returns table (seqno integer, token varchar(32704))
 return
 select seqno, replace(token, ux'241e', ',')
@@ -16,8 +37,8 @@ select seqno, replace(token, ux'241e', ',')
              columns seqno for ordinality
                    , token varchar(32704) path '.');
 
-drop function sysfun.split(input clob);
-create function sysfun.split(input clob)
+drop function split(input clob)#
+create function split(input clob)
 returns table (seqno integer, token varchar(32704))
 return
 select seqno, token
@@ -30,7 +51,7 @@ select * from table(split('asdf,h&m,foobar,<,>'));
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
-drop function sysfun.split(input varchar(32704), regex varchar(1024));
+drop function split(input varchar(32704), regex varchar(1024))#
 
 drop function tokenize(str varchar(32704), regex varchar(1024))#
 create function tokenize(str varchar(32704), regex varchar(1024))
@@ -62,9 +83,9 @@ end
 --#SET TERMINATOR ;
 
 
--- drop function sysfun.split(input varchar(32704), regex varchar(1024));
+-- drop function split(input varchar(32704), regex varchar(1024));
 
-create function sysfun.split(input varchar(32704), regex varchar(1024))
+create function split(input varchar(32704), regex varchar(1024))
 returns table (seqno integer, token varchar(32704))
 return
 select seqno, token

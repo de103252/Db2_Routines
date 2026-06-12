@@ -1,17 +1,31 @@
--- Following comment lines tell Data Studio resp. SPUFI
--- to use # as statement terminator
+-- =====================================================================
+-- EASTER DATE CALCULATION FUNCTION
+-- =====================================================================
+-- Calculate the date of Easter Sunday for any given year.
 --
+-- Features:
+-- - Uses the Meeus/Jones/Butcher Gregorian algorithm
+-- - Supports years from 1583 onwards (Gregorian calendar reform)
+-- - Returns DATE type for easy date arithmetic
+-- - Deterministic function for consistent results
+--
+-- Algorithm Reference:
+-- http://en.wikipedia.org/wiki/Computus#Meeus.2FJones.2FButcher_Gregorian_algorithm
+--
+-- Usage Examples:
+-- - Get Easter 2024: SELECT easter(2024) FROM SYSIBM.SYSDUMMYU
+-- - Get Easter for current year: SELECT easter(YEAR(CURRENT DATE)) FROM SYSIBM.SYSDUMMYU
+-- - Calculate days until Easter: SELECT easter(2025) - CURRENT DATE FROM SYSIBM.SYSDUMMYU
+-- =====================================================================
+
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
--- Returns the date of Easter Sunday in the given year, which must be
--- a year after the Gregorian calendar reform (>= 1583).
--- Calculation is done using the Meeus/Jones/Butcher algorithm
--- (http://en.wikipedia.org/wiki/Computus#Meeus.2FJones.2FButcher_Gregorian_algorithm)
+SET CURRENT SCHEMA = 'SYSFUN'#
 
--- drop function sysfun.easter(year integer)#
+-- drop function easter(year integer)#
 
-create function sysfun.easter(year integer)
+create function easter(year integer)
   returns date
   language sql
   deterministic

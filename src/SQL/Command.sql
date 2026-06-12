@@ -1,3 +1,26 @@
+-- =====================================================================
+-- DB2 COMMAND EXECUTION FUNCTIONS
+-- =====================================================================
+-- Execute Db2 commands and retrieve their output programmatically.
+--
+-- Features:
+-- - Execute Db2 commands via ADMIN_COMMAND_DB2 stored procedure
+-- - Capture command output as CLOB
+-- - Support for member-specific and group command execution
+-- - Automatic whitespace normalization in commands
+-- - Error handling with detailed messages
+--
+-- Functions:
+-- - db2command(command, member, processing_type): Full control execution
+-- - db2command(command, member): Execute on specific member
+-- - db2command(command): Execute on current member
+--
+-- Usage Examples:
+-- - Display database status: SELECT db2command('-DISPLAY DATABASE(*)') FROM SYSIBM.SYSDUMMYU
+-- - Display group info: SELECT db2command('-DISPLAY GROUP', NULL, 'GRP') FROM SYSIBM.SYSDUMMYU
+-- - Member-specific: SELECT db2command('-DISPLAY THREAD(*)', 'DB2A') FROM SYSIBM.SYSDUMMYU
+-- =====================================================================
+
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
@@ -5,9 +28,6 @@ set current schema = SYSFUN#
 
 -- Global variable to hold output from a utility invocation.
 create variable db2util.command_output clob(4M)#
-
-/*
-*/
 
 drop function db2command(command varchar(32704))#
 drop function db2command(command varchar(32704), db2_member varchar(8), processing_type varchar(3))#
@@ -54,6 +74,7 @@ create function db2command(command varchar(32704), member varchar(8))
   modifies sql data
   not deterministic
 return db2command(command, nullif(member, ''), cast(null as varchar(3)))
+#
 
 create function db2command(command varchar(32704))
   returns clob

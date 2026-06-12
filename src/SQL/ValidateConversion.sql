@@ -1,23 +1,40 @@
--- Following comment lines tell Data Studio resp. SPUFI
--- to use # as statement terminator
+-- =====================================================================
+-- VALIDATE CONVERSION FUNCTION
+-- =====================================================================
+-- Test if string can be converted to specified data type.
 --
+-- Features:
+-- - Validates conversion to any built-in Db2 data type
+-- - Returns 1 if conversion succeeds, 0 if it fails
+-- - Returns 1 for NULL input (NULL is valid for any type)
+-- - Deterministic with no external actions
+-- - Uses dynamic SQL to test conversion
+--
+-- Parameters:
+-- - src: Source string to test (VARCHAR(32704))
+-- - target_type: Target data type name (VARCHAR(64))
+--
+-- Supported Types:
+-- - INTEGER, SMALLINT, BIGINT, DECIMAL, NUMERIC, FLOAT, REAL, DOUBLE
+-- - DATE, TIME, TIMESTAMP
+-- - CHAR, VARCHAR, CLOB
+-- - And all other built-in Db2 types
+--
+-- Usage Examples:
+-- - Test integer: SELECT validate_conversion('42', 'INTEGER') FROM SYSIBM.SYSDUMMYU  -- Returns 1
+-- - Test invalid: SELECT validate_conversion('abc', 'INTEGER') FROM SYSIBM.SYSDUMMYU  -- Returns 0
+-- - Test date: SELECT validate_conversion('2024-12-25', 'DATE') FROM SYSIBM.SYSDUMMYU  -- Returns 1
+-- =====================================================================
+
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
-/*
-Tests whether a given character string can be converted
-to the specified built-in data type.
-If the string can be successfully converted, returns 1;
-otherwise, returns 0.
-If the string is NULL, returns 1.
-If target_type does not specify a valid built-in type name, 
-returns an error.
-*/
+SET CURRENT SCHEMA = 'SYSFUN'#
 
-drop function sysfun.validate_conversion(src varchar(32704), 
+drop function validate_conversion(src varchar(32704),
                                   target_type varchar(64))#
 
-create function sysfun.validate_conversion(src varchar(32704), 
+create function validate_conversion(src varchar(32704),
                                     target_type varchar(64))
   returns integer
   deterministic

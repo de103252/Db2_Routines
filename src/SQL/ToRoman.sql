@@ -1,14 +1,30 @@
--- Following comment lines tell Data Studio resp. SPUFI
--- to use # as statement terminator
+-- =====================================================================
+-- ROMAN NUMERAL CONVERSION FUNCTION
+-- =====================================================================
+-- Convert integer to Roman numeral representation.
 --
+-- Features:
+-- - Converts integers to Roman numeral strings
+-- - Supports range 1 to 9999
+-- - Uses standard Roman numeral notation (I, V, X, L, C, D, M)
+-- - Deterministic with no external actions
+-- - Returns NULL on NULL input
+--
+-- Roman Numeral Rules:
+-- - I=1, V=5, X=10, L=50, C=100, D=500, M=1000
+-- - Subtractive notation: IV=4, IX=9, XL=40, XC=90, CD=400, CM=900
+--
+-- Usage Examples:
+-- - Convert 42: SELECT to_roman(42) FROM SYSIBM.SYSDUMMYU  -- Returns 'XLII'
+-- - Convert 2024: SELECT to_roman(2024) FROM SYSIBM.SYSDUMMYU  -- Returns 'MMXXIV'
+-- - Convert 1: SELECT to_roman(1) FROM SYSIBM.SYSDUMMYU  -- Returns 'I'
+-- =====================================================================
+
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
-/*
-This extremely useful UDF converts a small integer
-to a roman numeral.
-Only values in the range [1..9999] are allowed.
-*/
+SET CURRENT SCHEMA = 'SYSFUN'#
+
 drop function to_roman(number smallint)#
 create function to_roman(number smallint)
 returns varchar(20)

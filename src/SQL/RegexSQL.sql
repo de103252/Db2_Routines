@@ -1,14 +1,30 @@
--- Following comment lines tell Data Studio resp. SPUFI
--- to use # as statement terminator
+-- =====================================================================
+-- REGULAR EXPRESSION FUNCTIONS
+-- =====================================================================
+-- SQL-based regular expression matching and replacement functions.
 --
+-- Features:
+-- - regex_matches: Test if string matches pattern (returns 1/0)
+-- - regex_replace: Replace pattern matches with replacement text
+-- - Uses XQuery fn:matches and fn:replace for pattern matching
+-- - Supports standard regex syntax
+-- - NULL-safe operations
+--
+-- Functions:
+-- - REGEX_MATCHES(str, regex): Returns 1 if match, 0 otherwise, NULL if inputs NULL
+-- - REGEX_REPLACE(str, regex): Replace matches with empty string
+-- - REGEX_REPLACE(str, regex, replacement): Replace matches with specified text
+--
+-- Usage Examples:
+-- - Email validation: SELECT REGEX_MATCHES('test@example.com', '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$') FROM SYSIBM.SYSDUMMYU
+-- - Remove digits: SELECT REGEX_REPLACE('Hello123', '\d+') FROM SYSIBM.SYSDUMMYU
+-- - Replace pattern: SELECT REGEX_REPLACE('Hello World', '(?i)world', 'Db2') FROM SYSIBM.SYSDUMMYU
+-- =====================================================================
+
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
-/*
-Test whether a string matches a regular expression.
-Returns 1 if yes, and 0 otherwise.
-If str, regex or both are NULL, returns NULL.
-*/
+SET CURRENT SCHEMA = 'SYSFUN'#
 
 drop function REGEX_MATCHES(str varchar(32704), regex varchar(32704))#
 
@@ -43,7 +59,7 @@ tests(s, r, x) as (
   select cast(null as char), '^a.*d$', cast(null as integer) from u
 ),
 results(s, r, x, a) as (
-  select s, r, x, regex_matches(s, r) from tests
+  select s, r, x, REGEX_MATCHES(s, r) from tests
 )
 select s as string, r as regex, x as expected, a as actual
   from results

@@ -1,3 +1,34 @@
+-- =====================================================================
+-- UPDATE SYSTEM PARAMETERS FUNCTION
+-- =====================================================================
+-- Update Db2 system parameters (ZPARMS) dynamically via SET SYSPARM command.
+--
+-- Features:
+-- - Parse comma-separated parameter list (macro.parm=value format)
+-- - Populate SYSIBM.SYSPARM_SETTINGS table
+-- - Execute SET SYSPARM command for specified member and module
+-- - Validates parameter format (requires macro.parm=value)
+-- - Returns 0 on success
+--
+-- Parameters:
+-- - db2_member: Target Db2 member name (VARCHAR(8))
+-- - parameter_module: Parameter module name (VARCHAR(8))
+-- - parameters: Comma-separated list of macro.parm=value pairs (VARCHAR(32704))
+--
+-- Parameter Format:
+-- - Each parameter: macro.parm=value
+-- - Multiple parameters: macro1.parm1=val1,macro2.parm2=val2
+--
+-- Usage Examples:
+-- - Update single: SELECT update_sysparm('DB2A', 'DSNZPARM', 'DSN6SYSP.IDTHTOIN=120') FROM SYSIBM.SYSDUMMYU
+-- - Update multiple: SELECT update_sysparm('DB2A', 'DSNZPARM', 'DSN6SYSP.IDTHTOIN=120,DSN6SYSP.CONTSTOR=5000') FROM SYSIBM.SYSDUMMYU
+-- =====================================================================
+
+--<ScriptOptions statementTerminator="#"/>
+--#SET TERMINATOR #
+
+SET CURRENT SCHEMA = 'SYSFUN'#
+
 drop function update_sysparm(parameters varchar(32704))
 #
 

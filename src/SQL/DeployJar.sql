@@ -1,8 +1,37 @@
+-- =====================================================================
+-- JAR DEPLOYMENT STORED PROCEDURE
+-- =====================================================================
+-- Deploy, replace, or remove Java JAR files in Db2 for z/OS.
+--
+-- Features:
+-- - Install new JAR files using SQLJ.INSTALL_JAR
+-- - Replace existing JAR files using SQLJ.DB2_REPLACE_JAR
+-- - Remove JAR files by passing NULL blob
+-- - Automatic WLM environment refresh after replacement
+-- - Schema-qualified JAR name support
+--
+-- Parameters:
+-- - jar: JAR file content as BLOB(1M), or NULL to remove
+-- - jarname: Qualified JAR name (schema.jarname or just jarname)
+--
+-- Behavior:
+-- - If jar is NULL: Removes the JAR file
+-- - If JAR exists: Replaces and refreshes all WLM environments
+-- - If JAR doesn't exist: Installs new JAR
+--
+-- Usage Examples:
+-- - Install JAR: CALL deploy_jar(:jar_blob, 'MYSCHEMA.MYJAR')
+-- - Replace JAR: CALL deploy_jar(:new_jar_blob, 'MYSCHEMA.MYJAR')
+-- - Remove JAR: CALL deploy_jar(NULL, 'MYSCHEMA.MYJAR')
+-- =====================================================================
+
 --<ScriptOptions statementTerminator="#"/>
 
-create procedure deploy_jar(jar     blob(1M), 
+SET CURRENT SCHEMA = 'SYSFUN'#
+
+create procedure deploy_jar(jar     blob(1M),
                             jarname varchar(257))
-  called on null input                            
+  called on null input
 begin
   declare rc integer default 0;
   declare wlmenv varchar(96);

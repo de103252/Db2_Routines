@@ -1,16 +1,32 @@
--- Following comment lines tell Data Studio resp. SPUFI
--- to use # as statement terminator
+-- =====================================================================
+-- JCL SUBMISSION AND OUTPUT RETRIEVAL FUNCTION
+-- =====================================================================
+-- Submit JCL job, wait for completion, and return job output.
 --
+-- Features:
+-- - Submits JCL via ADMIN_JOB_SUBMIT stored procedure
+-- - Waits for job completion using ADMIN_JOB_QUERY
+-- - Retrieves complete job output (SYSOUT)
+-- - Returns output as CLOB for large result sets
+-- - Handles job status and completion codes
+--
+-- Parameters:
+-- - jcl: JCL stream as CLOB (CCSID UNICODE)
+--
+-- Returns:
+-- - Complete job output as CLOB including all SYSOUT datasets
+--
+-- Usage Examples:
+-- - Submit job: SELECT submit('//MYJOB JOB ...\n//STEP1 EXEC PGM=IEFBR14') FROM SYSIBM.SYSDUMMYU
+-- - Store output: INSERT INTO RESULTS SELECT submit(:jcl_text) FROM SYSIBM.SYSDUMMYU
+-- =====================================================================
+
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
--- drop function sysfun.submit(jcl clob ccsid unicode)#
+SET CURRENT SCHEMA = 'SYSFUN'#
 
-/*
-Submits a JCL stream, waits for job termination, and returns
-the job output.
-*/
-create function sysfun.submit(jcl clob ccsid unicode)
+create function submit(jcl clob ccsid unicode)
   returns clob
   external action
   modifies sql data
@@ -118,7 +134,7 @@ select submit(jcl) as sysout
 
 select *
   from table(submit_t('
-//TEST JOB ,N
-OTIFY=&SYSUID
-//DISPL  EXEC PGM=IEFBR14'))#
+//TEST JOB ,NOTIFY=&SYSUID
+//DISPL  EXEC PGM=IEFBR14'))
+#
 

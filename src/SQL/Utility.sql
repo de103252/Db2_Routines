@@ -1,7 +1,34 @@
+-- =====================================================================
+-- DB2 UTILITY EXECUTION FUNCTIONS
+-- =====================================================================
+-- Execute Db2 utilities (LOAD, REORG, RUNSTATS, etc.) programmatically.
+--
+-- Features:
+-- - Execute utility statements via ADMIN_COMMAND_DB2
+-- - Automatic or custom utility ID generation
+-- - Capture utility output in global variable
+-- - Error handling with reason code checking
+-- - Supports all Db2 utilities (LOAD, REORG, RUNSTATS, CHECK, etc.)
+--
+-- Global Variables:
+-- - db2util.utility_id: Current utility ID (VARCHAR(16))
+-- - db2util.utility_output: Utility output messages (CLOB(4M))
+--
+-- Functions:
+-- - db2utility(stmt): Execute with auto-generated utility ID
+-- - db2utility(utilid, stmt): Execute with specified utility ID
+-- - terminate_utility(utilid): Terminate running utility
+--
+-- Usage Examples:
+-- - Run RUNSTATS: SELECT db2utility('RUNSTATS TABLESPACE MYDB.MYTS') FROM SYSIBM.SYSDUMMYU
+-- - Run REORG: SELECT db2utility('UTIL001', 'REORG TABLESPACE MYDB.MYTS') FROM SYSIBM.SYSDUMMYU
+-- - Check output: SELECT utility_output FROM SYSIBM.SYSDUMMYU
+-- =====================================================================
+
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
-set current schema = SYSFUN#
+set current schema = 'SYSFUN'#
 drop function db2utility(stmt clob ccsid unicode)#
 drop function db2utility(utilid varchar(16), stmt clob ccsid unicode)#
 drop function terminate_utility(utilid varchar(16))#
@@ -17,19 +44,6 @@ create variable db2util.utility_output clob(4M)#
 
 commit#
 
-
-/*
-Run Db2 utility statements.
-
-Parameters:
-utilid -- Utility ID or NULL. If NULL, the procedure generates a random utility ID.
-stmt   -- The utility statement(s).
-
-Returns:
-The highest reason code from running the utility. If the reason code was greater than 4,
-signals SQLSTATE 5UA99.
-The utility output is returned in global variable UTILITY_OUTPUT.
-*/
 create function db2utility(utilid varchar(16), stmt clob ccsid unicode)
   returns integer
   modifies sql data
@@ -102,7 +116,8 @@ grant execute on function db2utility(clob)
    to public
 #
 
-/*
+/* Commented out -- does not yet work
+
 drop function terminate_utility(utilid varchar(16))
 #
 

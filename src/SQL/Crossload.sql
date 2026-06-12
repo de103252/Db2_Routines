@@ -1,15 +1,33 @@
--- Following comment lines tell Data Studio resp. SPUFI
--- to use # as statement terminator
+-- =====================================================================
+-- CROSS-LOAD FUNCTIONS FOR TABLE DATA COPYING
+-- =====================================================================
+-- Copy table contents between schemas and tables using the Db2 LOAD utility.
 --
+-- Features:
+-- - Single table copy with automatic column mapping
+-- - Schema-wide copy of all matching tables
+-- - Custom SELECT statement support for filtered copies
+-- - Automatic temp space estimation from real-time statistics
+-- - Column compatibility checking (common, updateable columns only)
+-- - Excludes system tables and non-updateable columns
+--
+-- Functions:
+-- - crossload(sourceselect, targetschema, targettable, tmpspace): Custom SELECT
+-- - crossload(sourceschema, sourcetable, targetschema, targettable): Single table
+-- - crossload(sourceschema, targetschema): All matching tables in schemas
+--
+-- Usage Examples:
+-- - Copy single table: SELECT crossload('SCHEMA1', 'TABLE1', 'SCHEMA2', 'TABLE2') FROM SYSIBM.SYSDUMMYU
+-- - Copy all tables: SELECT crossload('SCHEMA1', 'SCHEMA2') FROM SYSIBM.SYSDUMMYU
+-- - Custom SELECT: SELECT crossload('SELECT COL1, COL2 FROM SCHEMA1.TABLE1 WHERE COL1 > 100', 'SCHEMA2', 'TABLE2', 50) FROM SYSIBM.SYSDUMMYU
+-- =====================================================================
+
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
-/*
-Copy table contents from one table to another via the
-Db2 cross-load function.
-*/
+SET CURRENT SCHEMA = 'SYSFUN'#
 
-drop function crossload(sourceschema varchar(128),     
+drop function crossload(sourceschema varchar(128),
                         targetschema varchar(128))#     
 
 drop function crossload(sourceschema varchar(128), 

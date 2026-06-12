@@ -1,12 +1,27 @@
--- Following comment lines tell Data Studio resp. SPUFI
--- to use # as statement terminator
+-- =====================================================================
+-- DATA SHARING GROUP MEMBERS FUNCTION
+-- =====================================================================
+-- Retrieve list of all members in the Db2 data sharing group.
 --
+-- Features:
+-- - Executes -DISPLAY GROUP command via ADMIN_COMMAND_DB2
+-- - Returns comma-separated list of member names
+-- - Uses SYSIBM.DATA_SHARING_GROUP catalog table
+-- - Non-deterministic (reflects current group state)
+--
+-- Usage Examples:
+-- - Get all members: SELECT data_sharing_members() FROM SYSIBM.SYSDUMMYU
+-- - Count members: SELECT LENGTH(data_sharing_members()) - LENGTH(REPLACE(data_sharing_members(), ',', '')) + 1 FROM SYSIBM.SYSDUMMYU
+-- =====================================================================
+
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
-drop function sysfun.data_sharing_members()#
+SET CURRENT SCHEMA = 'SYSFUN'#
 
-create function sysfun.data_sharing_members()
+drop function data_sharing_members()#
+
+create function data_sharing_members()
   returns varchar(32704)
   language sql
   not deterministic

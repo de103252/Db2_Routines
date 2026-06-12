@@ -1,20 +1,33 @@
--- Following comment lines tell Data Studio resp. SPUFI
--- to use # as statement terminator
+-- =====================================================================
+-- HEXADECIMAL TO INTEGER CONVERSION FUNCTION
+-- =====================================================================
+-- Convert hexadecimal string to integer value (inverse of HEX function).
 --
+-- Features:
+-- - Accepts upper or lowercase hex digits (0-9, A-F, a-f)
+-- - Returns BIGINT for large value support
+-- - Validates hex string format
+-- - Returns NULL on NULL input
+-- - Deterministic with no external actions
+--
+-- Error Handling:
+-- - SQLSTATE 72606: Invalid hexadecimal constant
+-- - SQLSTATE 22003: Numeric overflow (value exceeds BIGINT range)
+--
+-- Usage Examples:
+-- - Convert FF to 255: SELECT hextoint('FF') FROM SYSIBM.SYSDUMMYU
+-- - Convert max int: SELECT hextoint('7FFFFFFF') FROM SYSIBM.SYSDUMMYU
+-- - Handle NULL: SELECT hextoint(NULL) FROM SYSIBM.SYSDUMMYU
+-- =====================================================================
+
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
-/*
-Convert a hex string to an integer (inverse of HEX function).
-The string must contain upper- or lower-case hex digits only
-(0..9, A..F, a..f). otherwise, SQLSTATE 72606 is raised.
-The hex string must represent a number within the range of a
-BIGINT, otherwise, an overflow condition is raised (SQLSTATE 22003).
-*/
+SET CURRENT SCHEMA = 'SYSFUN'#
 
-drop function sysfun.hextoint(s varchar(32704))#
+drop function hextoint(s varchar(32704))#
 
-create function sysfun.hextoint(s varchar(32704))
+create function hextoint(s varchar(32704))
   returns bigint
   returns null on null input
   deterministic

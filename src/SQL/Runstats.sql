@@ -1,13 +1,30 @@
--- Following comment lines tell Data Studio resp. SPUFI
--- to use # as statement terminator
+-- =====================================================================
+-- RUNSTATS UTILITY EXECUTION FUNCTION
+-- =====================================================================
+-- Execute RUNSTATS utility against tables or tablespaces with pattern matching.
 --
+-- Features:
+-- - Pattern-based table or tablespace selection
+-- - Supports schema and name wildcards
+-- - Custom RUNSTATS statement options
+-- - Batch execution across multiple objects
+-- - Returns highest return code from all executions
+--
+-- Parameters:
+-- - what: 'TABLES' or 'DATABASE' (tablespace)
+-- - schema_pattern: Schema name pattern (supports wildcards)
+-- - name_pattern: Table/tablespace name pattern (supports wildcards)
+-- - statement: RUNSTATS options string
+--
+-- Usage Examples:
+-- - All tables in schema: SELECT runstats('TABLES', 'MYSCHEMA', '%', 'TABLESPACE ALL') FROM SYSIBM.SYSDUMMYU
+-- - Specific pattern: SELECT runstats('TABLES', 'PROD%', 'CUST%', 'TABLESPACE ALL INDEX ALL') FROM SYSIBM.SYSDUMMYU
+-- =====================================================================
+
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
-/*
-Runs the RUNSTATS utility against the specified set of 
-tables or tablespaces.
-*/
+SET CURRENT SCHEMA = 'SYSFUN'#
     
 drop function runstats(what           varchar(16),
                        schema_pattern varchar(1024), 

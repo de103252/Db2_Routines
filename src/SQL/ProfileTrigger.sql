@@ -1,23 +1,24 @@
--- ============================================================================
--- INSTEAD OF Trigger for DB2 Profile Management
--- ============================================================================
--- Purpose: Provides a view-based interface to insert/update profile data
---          in both SYSIBM.DSN_PROFILE_TABLE and SYSIBM.DSN_PROFILE_ATTRIBUTES
+-- =====================================================================
+-- DB2 PROFILE MANAGEMENT TRIGGER
+-- =====================================================================
+-- INSTEAD OF trigger providing view-based interface for profile management.
 --
--- Author: Bob
--- Date: 2026-02-12
--- DB2 Version: DB2 for z/OS
--- ============================================================================
--- Actual DB2 z/OS Schema:
--- DSN_PROFILE_TABLE columns:
---   AUTHID, PLANNAME, COLLID, PKGNAME, LOCATION, PROFILEID, 
---   PROFILE_TIMESTAMP, PROFILE_ENABLED, GROUP_MEMBER, REMARKS, 
---   ROLE, PRDID, CLIENT_APPLNAME, CLIENT_USERID, CLIENT_WRKSTNNAME
+-- Features:
+-- - Unified view combining DSN_PROFILE_TABLE and DSN_PROFILE_ATTRIBUTES
+-- - INSTEAD OF INSERT trigger for simplified profile creation
+-- - Automatic profile ID generation
+-- - Handles both profile metadata and attributes in single operation
+-- - Timestamp management for audit trail
 --
--- DSN_PROFILE_ATTRIBUTES columns:
---   PROFILEID, KEYWORDS, ATTRIBUTE1, ATTRIBUTE2, ATTRIBUTE3,
---   ATTRIBUTE_TIMESTAMP, REMARKS
--- ============================================================================
+-- Tables:
+-- - SYSIBM.DSN_PROFILE_TABLE: Profile metadata (AUTHID, PLANNAME, etc.)
+-- - SYSIBM.DSN_PROFILE_ATTRIBUTES: Profile attributes (KEYWORDS, ATTRIBUTE1-3)
+--
+-- Usage:
+-- - Insert via view to create profiles with attributes in one statement
+-- - View provides unified query interface across both tables
+-- - Simplifies profile management by hiding table complexity
+-- =====================================================================
 
 -- ============================================================================
 -- Step 1: Create a view that combines both profile tables

@@ -1277,82 +1277,45 @@ If called with a null input, returns the null value.
 [[gzip]]
 === GZIP and GUNZIP
 
-Stored procedures for compressing and decompressing BLOB data using GZIP compression.
+Scalar functions for compressing and decompressing BLOB data using GZIP compression.
 
 [sql,subs="quotes"]
 ----
-call gzip(_input_, _result_)
-call gunzip(_input_, _result_)
+GZIP(_input_)
+GUNZIP(_input_)
 ----
 
-input:: A BLOB containing the data to compress (for GZIP) or decompress (for GUNZIP).
-result:: An output parameter that receives the compressed or decompressed BLOB.
+input:: A BLOB containing the data to compress for [`GZIP`](src/main/java/com/ibm/db2/gzip/GZip.java:78) or decompress for [`GUNZIP`](src/main/java/com/ibm/db2/gzip/GZip.java:144).
 
-The [`GZIP`](src/main/java/com/ibm/db2/gzip/GZip.java:78) procedure compresses BLOB data using GZIP compression algorithm, typically achieving 60-80% size reduction for text data. The [`GUNZIP`](src/main/java/com/ibm/db2/gzip/GZip.java:144) procedure decompresses GZIP-compressed BLOB data back to its original form.
+The [`GZIP`](src/main/java/com/ibm/db2/gzip/GZip.java:78) function compresses BLOB data using the GZIP compression algorithm and returns the compressed data as a BLOB. The [`GUNZIP`](src/main/java/com/ibm/db2/gzip/GZip.java:144) function decompresses GZIP-compressed BLOB data and returns the original uncompressed content.
 
-Both procedures have a maximum input size limit of 100MB to prevent memory exhaustion.
+Both functions have a maximum input size limit of 100MB to prevent memory exhaustion.
 
-If the input is null or invalid, an SQL error is raised.
+If the input is null or invalid, an SQL error is raised. [`GZIP`](src/main/java/com/ibm/db2/gzip/GZip.java:78) returns an empty BLOB for empty input, while [`GUNZIP`](src/main/java/com/ibm/db2/gzip/GZip.java:144) raises an error for empty input.
 
 .Example 1: Compress data
 [sql]
 ----
-declare input blob(1m);
-declare compressed blob(1m);
-
-set input = cast('This is a test string that will be compressed' as blob);
-call gzip(input, compressed);
-
-select length(input) as original_size,
-       length(compressed) as compressed_size,
-       decimal(length(compressed) * 100.0 / length(input), 5, 2) as compression_ratio
+select length(cast('Hello World' as blob(10m))) as original_length,
+       length(gzip(cast('Hello World' as blob(10m)))) as compressed_length
   from sysibm.sysdummyu;
 ----
 
 .Example 2: Compress and decompress
 [sql]
 ----
-declare original blob(1m);
-declare compressed blob(1m);
-declare decompressed blob(1m);
-
-set original = cast('Test data' as blob);
-call gzip(original, compressed);
-call gunzip(compressed, decompressed);
-
--- Verify data integrity
-select case when original = decompressed
-            then 'Data integrity verified'
-            else 'Data corruption detected'
-       end as status
+select gunzip(gzip(cast('Hello World' as blob(10m))))
   from sysibm.sysdummyu;
 ----
 
-.Example 3: Compress table data for archival
+.Example 3: Validate round-trip length
 [sql]
 ----
-create table archived_data (
-  id integer,
-  compressed_content blob(10m),
-  original_size bigint,
-  compressed_size bigint
-);
-
-insert into archived_data
-select id,
-       (select result from table(
-         select cast(content as blob) as input
-           from original_table o2
-          where o2.id = o1.id
-       ) cross join lateral(
-         values(gzip(input))
-       ) as x(result)),
-       length(content),
-       length(result)
-  from original_table o1;
+select length(gunzip(gzip(cast('Hello World' as blob(10m))))) as roundtrip_length
+  from sysibm.sysdummyu;
 ----
 
-NOTE: These procedures use Java's GZIP implementation and require the Java WLM environment. The compression uses default compression level (6) which provides a good balance between speed and compression ratio.
+NOTE: These functions use Java's GZIP implementation and require the Java WLM environment. The compression uses the default compression level, which provides a good balance between speed and compression ratio.
 
 == System utility functions
 

@@ -1,5 +1,5 @@
 -- =====================================================================
--- COMPREHENSIVE TEST SUITE FOR ALL USER-DEFINED FUNCTIONS
+-- TEST SUITE FOR ALL USER-DEFINED FUNCTIONS
 -- =====================================================================
 -- This file systematically tests all UDFs in the Db2_Routines project
 -- with assertion logic, expected results validation, and detailed reporting.

@@ -13,6 +13,13 @@ import java.util.Locale;
 
 public class Sprintf {
 
+	/*
+	 * Db2 internal type codes for PACK function.
+	 * These values are defined by Db2 for z/OS and must not be changed.
+	 * 
+	 * @see <a href="https://www.ibm.com/docs/en/db2-for-zos/13">Db2 for z/OS
+	 *      Documentation</a>
+	 */
 	private static final int TYPE_DATE = 384;
 	private static final int TYPE_TIME = 388;
 	private static final int TYPE_TIMESTAMP = 392;
@@ -42,7 +49,7 @@ public class Sprintf {
 			// dbTimestamp.setPicos(fraction);
 			if (withTimezone) {
 				int offset = readShort();
-				//dbTimestamp.setTimeZone(new SimpleTimeZone(offset, "dummy"));
+				// dbTimestamp.setTimeZone(new SimpleTimeZone(offset, "dummy"));
 			}
 			return dbTimestamp;
 		}
@@ -95,14 +102,16 @@ public class Sprintf {
 	 * Unpacks a {@code byte[]} returned by the Db2 {@code PACK} function.
 	 * Character data must have been packed using UTF-8 encoding, that is,
 	 * with the CCSID1208 clause:
+	 * 
 	 * <PRE>
-     * PACK(CCSID 1208, 'This is VARCHAR data')
+	 * PACK(CCSID 1208, 'This is VARCHAR data')
 	 * </PRE>
 	 *
 	 * @param by the {@code byte[]} returned by the Db2 {@code PACK} function
 	 * @return the unpacked {@code Object[]}
 	 * @throws SQLException if the data was not packed using the PACK function,
-	 * or if character data was not packed using UTF-8 encoding.
+	 *                      or if character data was not packed using UTF-8
+	 *                      encoding.
 	 * @see https://www.ibm.com/docs/en/db2-for-zos/13.0.0?topic=functions-pack-scalar-function
 	 */
 	static Object[] unpack(byte[] by) throws SQLException {
@@ -123,41 +132,42 @@ public class Sprintf {
 				Object o = null;
 				if ((types[i] & 1) == 0) {
 					switch (types[i] & ~1) {
-					case TYPE_SMALLINT:
-						o = dis.readShort();
-						break;
-					case TYPE_INTEGER:
-						o = dis.readInt();
-						break;
-					case TYPE_BIGINT:
-						o = dis.readLong();
-						break;
-					case TYPE_CHAR:
-					case TYPE_VARCHAR:
-						if (dis.readUnsignedShort() != 1208) {
-							throw new SQLException("Character data must be UTF-8 encoded. Use PACK(CCSID1208, ...).");
-						}
-						o = dis.readUTF();
-						break;
-					case TYPE_DATE:
-						o = new java.sql.Date(new GregorianCalendar(dis.readPackedInt(2), dis.readPackedInt(1) - 1,
-								dis.readPackedInt(1)).getTimeInMillis());
-						break;
-					case TYPE_TIME:
-						o = new java.sql.Time(dis.readPackedInt(1), dis.readPackedInt(1), dis.readPackedInt(1));
-						break;
-					case TYPE_TIMESTAMP:
-						o = dis.readTimestamp(false);
-						break;
-					case TYPE_TIMESTAMP_TZ:
-						o = dis.readTimestamp(true);
-						break;
-					case TYPE_REAL:
-						o = Double.longBitsToDouble(dis.readLong());
-						break;
-					case TYPE_DECIMAL:
-						o = dis.readDecimal();
-						break;
+						case TYPE_SMALLINT:
+							o = dis.readShort();
+							break;
+						case TYPE_INTEGER:
+							o = dis.readInt();
+							break;
+						case TYPE_BIGINT:
+							o = dis.readLong();
+							break;
+						case TYPE_CHAR:
+						case TYPE_VARCHAR:
+							if (dis.readUnsignedShort() != 1208) {
+								throw new SQLException(
+										"Character data must be UTF-8 encoded. Use PACK(CCSID1208, ...).");
+							}
+							o = dis.readUTF();
+							break;
+						case TYPE_DATE:
+							o = new java.sql.Date(new GregorianCalendar(dis.readPackedInt(2), dis.readPackedInt(1) - 1,
+									dis.readPackedInt(1)).getTimeInMillis());
+							break;
+						case TYPE_TIME:
+							o = new java.sql.Time(dis.readPackedInt(1), dis.readPackedInt(1), dis.readPackedInt(1));
+							break;
+						case TYPE_TIMESTAMP:
+							o = dis.readTimestamp(false);
+							break;
+						case TYPE_TIMESTAMP_TZ:
+							o = dis.readTimestamp(true);
+							break;
+						case TYPE_REAL:
+							o = Double.longBitsToDouble(dis.readLong());
+							break;
+						case TYPE_DECIMAL:
+							o = dis.readDecimal();
+							break;
 					}
 					result[i] = o;
 				}

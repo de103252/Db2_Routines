@@ -57,7 +57,7 @@ import com.ibm.jzos.ZFile;
 public final class Unload {
 
     /** Default JDBC URL for stored procedure context */
-    private static String url = "jdbc:default:connection";
+    private static final String url = "jdbc:default:connection";
 
     /**
      * Compiled regex pattern for parsing custom format specifications (cached for

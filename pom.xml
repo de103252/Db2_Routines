@@ -7,7 +7,7 @@
     <properties>
         <main.class>com.ibm.db2.csv.Unload</main.class>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        
+
         <!-- Db2 Deployment Configuration Properties -->
         <!-- These can be overridden via command line: -Ddb2.host=myhost -->
         <db2.host></db2.host>
@@ -29,6 +29,18 @@
                     <source>1.8</source>
                     <target>1.8</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>12.2.2</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

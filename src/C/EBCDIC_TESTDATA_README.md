@@ -2,7 +2,8 @@
 
 ## Overview
 
-This Python script generates test data encoded in EBCDIC format with fixed 80-byte records. The data follows a specific layout suitable for testing mainframe applications and data processing routines.
+This Python script generates test data encoded in EBCDIC format for testing the
+"READ_GENERIC_FILE" user-defined function.
 
 ## Record Layout
 

@@ -1,28 +1,51 @@
+-- =====================================================================
+-- READ GENERIC FILE TABLE FUNCTION
+-- =====================================================================
+-- Read fixed-format binary files from z/OS datasets into table format.
+--
+-- Features:
+-- - Returns generic table with user-defined column structure
+-- - Reads z/OS sequential datasets or PDS members
+-- - Supports various data types
+--   (CHAR, INTEGER, BIGINT, DATE, TIME, DECIMAL, VARBINARY)
+--
+-- Parameters:
+-- - FILENAME: Dataset name (e.g., 'ADCDMST.FLATFILE.BIN')
+-- - FLAGS: Processing flags (typically 0)
+--
+-- Usage Example:
+-- - Read binary file: 
+--   SELECT * FROM TABLE(READ_GENERIC_FILE('ADCDMST.FLATFILE.BIN', 0)) T (
+--     id CHAR(8), name CHAR(35), int64 BIGINT, int32 INTEGER, 
+--     int16 SMALLINT, ddd DATE, tm TIME, salary DECIMAL(9,2), rst VARBINARY(80)
+--   )
+-- =====================================================================
+
 set current schema = 'SYSFUN';
 
-DROP FUNCTION READ_GENERIC_FILE(FILENAME VARCHAR(54), FLAGS INTEGER);
+drop function read_generic_file(filename varchar(54), flags integer);
 
-CREATE FUNCTION READ_GENERIC_FILE(FILENAME VARCHAR(54), FLAGS INTEGER)
-  RETURNS GENERIC TABLE
-    SPECIFIC READ_GENERIC_FILE
-    LANGUAGE C
-    SECURITY USER
-    EXTERNAL NAME RDGENFIL
-    PARAMETER STYLE DB2SQL
-    PARAMETER CCSID EBCDIC
-    PARAMETER VARCHAR STRUCTURE
-    FINAL CALL
-    FENCED
-    NOT DETERMINISTIC
-    EXTERNAL ACTION
-    DISALLOW PARALLEL
-    SCRATCHPAD 64
-    WLM ENVIRONMENT DBDGENV
-    STAY RESIDENT YES
-    RUN OPTIONS 'POSIX(ON),XPLINK(ON)'
+create function read_generic_file(filename varchar(54), flags integer)
+  returns generic table
+    specific read_generic_file
+    language c
+    security user
+    external name rdgenfil
+    parameter style db2sql
+    parameter ccsid ebcdic
+    parameter varchar structure
+    final call
+    fenced
+    not deterministic
+    external action
+    disallow parallel
+    scratchpad 64
+    wlm environment dbdgenv
+    stay resident yes
+    run options 'POSIX(ON),XPLINK(ON)'
     -- for debug:
     --   'POSIX(ON),XPLINK(ON),TEST(,,,TCPIP&10.1.1.1%8001:*)'
-    CARDINALITY 100000
+    cardinality 100000
  ;
 
 SELECT *

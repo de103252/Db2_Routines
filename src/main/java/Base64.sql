@@ -208,5 +208,3 @@ select length(names), length(base64encode(varbinary(names))) from t
 -- See Also:
 -- - Java implementation: com/ibm/db2/base64/Base64.java
 -- =============================================================================
-
--- Made with Bob

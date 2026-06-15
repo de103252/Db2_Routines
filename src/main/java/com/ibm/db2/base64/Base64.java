@@ -99,17 +99,6 @@ public class Base64 {
 		return java.util.Base64.getDecoder().decode(data);
 	}
 
-	public static String encode3(Blob data) throws SQLException, IOException {
-		try (Connection conn = getConnection()) {
-			ByteArrayOutputStream os = new ByteArrayOutputStream();
-			Encoder encoder = java.util.Base64.getEncoder();
-			try (InputStream is = new BufferedInputStream(data.getBinaryStream())) {
-				copy(is, encoder.wrap(os));
-			}
-			return new String(os.toByteArray(), "UTF8");
-		}
-	}
-
 	public static String encode(byte[] data) {
 		return java.util.Base64.getEncoder().encodeToString(data);
 	}

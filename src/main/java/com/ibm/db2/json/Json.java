@@ -1,7 +1,6 @@
 package com.ibm.db2.json;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.sql.Clob;
@@ -267,7 +266,6 @@ public class Json {
      * @return the CLOB content as a String
      * @throws IOException if reading fails
      * @throws SQLException if CLOB access fails
-     * @deprecated Use {@link #readClobContent(Clob, long)} instead
      */
     @Deprecated
     private static String readContents(Clob clob) throws IOException, SQLException {
@@ -276,5 +274,3 @@ public class Json {
         return s.toString();
     }
 }
-
-// Made with Bob

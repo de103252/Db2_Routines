@@ -13,7 +13,7 @@ This guide gets you deploying to Db2 for z/OS in 5 minutes.
 
 ```bash
 # Windows - Use full Maven path
-C:\Users\UliSeelbach\OneDrive` -` IBM\Tools\apache-maven-3.9.14\bin\mvn.cmd clean install -Pdb2-deploy ^
+mvn clean install -Pdb2-deploy ^
   -Ddb2.host=your-mainframe ^
   -Ddb2.port=5045 ^
   -Ddb2.database=YOURDB ^

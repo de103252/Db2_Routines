@@ -101,13 +101,15 @@ public final class Unload {
         final String format;
         final int ccsid;
         final String printHeaders;
+        final String sqlStatement;
         
-        UnloadConfig(String jdbcUrl, String outputFile, String format, int ccsid, String printHeaders) {
+        UnloadConfig(String jdbcUrl, String outputFile, String format, int ccsid, String printHeaders, String sqlStatement) {
             this.jdbcUrl = jdbcUrl;
             this.outputFile = outputFile;
             this.format = format;
             this.ccsid = ccsid;
             this.printHeaders = printHeaders;
+            this.sqlStatement = sqlStatement;
         }
     }
     
@@ -540,14 +542,17 @@ public final class Unload {
         // Determine header printing (default is true, unless --no-headers is specified)
         String printHeaders = cmd.hasOption("h") ? "N" : "Y";
         
-        return new UnloadConfig(jdbcUrl, outputFile, format, ccsid, printHeaders);
+        // Extract SQL statement if provided
+        String sqlStatement = cmd.getOptionValue("s");
+        
+        return new UnloadConfig(jdbcUrl, outputFile, format, ccsid, printHeaders, sqlStatement);
     }
 
     /**
      * Main method for command-line execution using Apache Commons CLI.
      * <p>
      * Supports GNU/Unix style command-line options with both short and long forms.
-     * SQL statement is read from standard input.
+     * SQL statement can be provided via the -s/--sql option or read from standard input.
      * </p>
      *
      * @param args Command-line arguments
@@ -560,8 +565,18 @@ public final class Unload {
             // Set JDBC URL for connection
             url = config.jdbcUrl;
             
-            // Read SQL from stdin
-            String sql = readFully(System.in);
+            // Get SQL statement from command line or stdin
+            String sql;
+            if (config.sqlStatement != null && !config.sqlStatement.trim().isEmpty()) {
+                // Use SQL statement from command line argument
+                sql = config.sqlStatement;
+            } else {
+                // Read SQL from stdin
+                sql = readFully(System.in);
+            }
+            
+            // Validate SQL statement is not empty
+            validateNotEmpty(sql, "SQL statement");
             
             // Execute unload
             long rowCount = unload(sql, config.outputFile, config.format, config.ccsid, config.printHeaders);
@@ -631,6 +646,13 @@ public final class Unload {
                 .desc("Output CCSID/character encoding (default: 1208 for UTF-8)")
                 .build());
         
+        options.addOption(Option.builder("s")
+                .longOpt("sql")
+                .hasArg()
+                .argName("STATEMENT")
+                .desc("SQL SELECT statement to execute (if not provided, reads from standard input)")
+                .build());
+        
         options.addOption(Option.builder("h")
                 .longOpt("no-headers")
                 .hasArg(false)
@@ -656,15 +678,20 @@ public final class Unload {
         formatter.setWidth(100);
         
         String header = "\nUnload Db2 query results to CSV files.\n" +
-                        "SQL SELECT statement is read from standard input.\n\n" +
+                        "SQL SELECT statement can be provided via -s/--sql option or read from standard input.\n\n" +
                         "Options:\n";
         
         String footer = "\nExamples:\n" +
+                        "  # Using SQL from command line:\n" +
+                        "  java " + Unload.class.getName() + " -u jdbc:db2://localhost:5035/SAMPLE -o output.csv \\\n" +
+                        "       -s \"SELECT * FROM SYSIBM.SYSTABLES\"\n\n" +
+                        "  # Using SQL from standard input:\n" +
                         "  echo \"SELECT * FROM SYSIBM.SYSTABLES\" | \\\n" +
                         "    java " + Unload.class.getName() + " -u jdbc:db2://localhost:5035/SAMPLE -o output.csv\n\n" +
-                        "  echo \"SELECT * FROM SYSIBM.SYSTABLES\" | \\\n" +
-                        "    java " + Unload.class.getName() + " --jdbc-url jdbc:db2://localhost:5035/SAMPLE \\\n" +
-                        "         --output-file output.csv --format RFC4180 --ccsid 1208 --no-headers\n";
+                        "  # With all options:\n" +
+                        "  java " + Unload.class.getName() + " --jdbc-url jdbc:db2://localhost:5035/SAMPLE \\\n" +
+                        "       --output-file output.csv --sql \"SELECT * FROM SYSIBM.SYSTABLES\" \\\n" +
+                        "       --format RFC4180 --ccsid 1208 --no-headers\n";
         
         formatter.printHelp("java " + Unload.class.getName(), header, options, footer, true);
     }

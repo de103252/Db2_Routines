@@ -89,12 +89,12 @@ with
 jahre as (
   select value as jahr
        , timestamp(easter(value)) as Ostern
-    from table(generate_series(year(current date), year(current date) + 10))
+    from table(generate_series(year(current date), year(current date) + 100))
 )
 select to_roman(jahr) as "Jahr"
-     , formattimestamp(ostern,           'd. MMMM', 'de-DE') as "Ostern"
-     , formattimestamp(ostern + 39 days, 'd. MMMM', 'de-DE') as "Himmelfahrt"
-     , formattimestamp(ostern + 49 days, 'd. MMMM', 'de-DE') as "Pfingsten"
-     , formattimestamp(ostern + 60 days, 'd. MMMM', 'de-DE') as "Fronleichnam"
+     , formattimestamp(ostern,           'long', 'de-DE') as "Ostern"
+     , formattimestamp(ostern + 39 days, 'd. MMMM', 'fr-CH') as "Ascension"
+     , formattimestamp(ostern + 49 days, 'd. MMMM', 'it-CH') as "Pentecoste"
+     , formattimestamp(ostern + 60 days, 'd. MMMM', 'rm-CH') as "Corpus Christi"
   from jahre
 ;

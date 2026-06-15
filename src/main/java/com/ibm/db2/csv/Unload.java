@@ -4,9 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.charset.UnsupportedCharsetException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -57,7 +55,7 @@ import com.ibm.jzos.ZFile;
 public final class Unload {
 
     /** Default JDBC URL for stored procedure context */
-    private static final String url = "jdbc:default:connection";
+    private static String url = "jdbc:default:connection";
 
     /**
      * Compiled regex pattern for parsing custom format specifications (cached for
@@ -93,6 +91,26 @@ public final class Unload {
     private Unload() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
+    /**
+     * Configuration object for command-line execution.
+     * Encapsulates all parameters needed for the unload operation.
+     */
+    private static class UnloadConfig {
+        final String jdbcUrl;
+        final String outputFile;
+        final String format;
+        final int ccsid;
+        final String printHeaders;
+        
+        UnloadConfig(String jdbcUrl, String outputFile, String format, int ccsid, String printHeaders) {
+            this.jdbcUrl = jdbcUrl;
+            this.outputFile = outputFile;
+            this.format = format;
+            this.ccsid = ccsid;
+            this.printHeaders = printHeaders;
+        }
+    }
+    
 
     /**
      * Unload query results in UTF-8 Excel format with headers.
@@ -286,22 +304,7 @@ public final class Unload {
             throw new SQLException("Failed to open output file: " + filename, e);
         }
     }
-
-    /**
-     * Get Charset for CCSID.
-     *
-     * @param ccsid Character encoding CCSID
-     * @return Charset instance
-     * @throws SQLException If CCSID is not supported
-     */
-    private static Charset charsetFor(int ccsid) throws SQLException {
-        try {
-            return Charset.forName(encodingFor(ccsid));
-        } catch (UnsupportedCharsetException e) {
-            throw new SQLException(String.format("Unsupported CCSID: %d", ccsid), e);
-        }
-    }
-
+    
     /**
      * Get encoding name for CCSID.
      * <p>
@@ -486,6 +489,61 @@ public final class Unload {
     }
 
     /**
+     * Parse and validate command-line arguments.
+     *
+     * @param args Command-line arguments
+     * @return UnloadConfig object with validated configuration
+     * @throws ParseException If command-line parsing fails
+     * @throws IllegalArgumentException If validation fails
+     */
+    private static UnloadConfig parseCommandLine(String[] args) throws ParseException {
+        Options options = createOptions();
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = parser.parse(options, args);
+        
+        // Check for help option
+        if (cmd.hasOption("help")) {
+            printHelp(options);
+            System.exit(0);
+        }
+        
+        // Validate required options
+        if (!cmd.hasOption("u") || !cmd.hasOption("o")) {
+            System.err.println("Error: Missing required options.");
+            System.err.println();
+            printHelp(options);
+            System.exit(8);
+        }
+        
+        // Extract and validate JDBC URL
+        String jdbcUrl = cmd.getOptionValue("u");
+        
+        // Extract output file
+        String outputFile = cmd.getOptionValue("o");
+        
+        // Extract format (with default)
+        String format = cmd.getOptionValue("f", DEFAULT_FORMAT);
+        
+        // Parse and validate CCSID
+        int ccsid = DEFAULT_CCSID;
+        if (cmd.hasOption("c")) {
+            try {
+                ccsid = Integer.parseInt(cmd.getOptionValue("c"));
+                validateCcsid(ccsid);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException(
+                    "Invalid CCSID value '" + cmd.getOptionValue("c") +
+                    "'. Must be an integer between 1 and 65535.");
+            }
+        }
+        
+        // Determine header printing (default is true, unless --no-headers is specified)
+        String printHeaders = cmd.hasOption("h") ? "N" : "Y";
+        
+        return new UnloadConfig(jdbcUrl, outputFile, format, ccsid, printHeaders);
+    }
+
+    /**
      * Main method for command-line execution using Apache Commons CLI.
      * <p>
      * Supports GNU/Unix style command-line options with both short and long forms.
@@ -495,61 +553,28 @@ public final class Unload {
      * @param args Command-line arguments
      */
     public static void main(String[] args) {
-        Options options = createOptions();
-        CommandLineParser parser = new DefaultParser();
-        
         try {
-            CommandLine cmd = parser.parse(options, args);
+            // Parse and validate command-line arguments
+            UnloadConfig config = parseCommandLine(args);
             
-            // Check for help option
-            if (cmd.hasOption("help")) {
-                printHelp(options);
-                System.exit(0);
-            }
-            
-            // Validate required options
-            if (!cmd.hasOption("u") || !cmd.hasOption("o")) {
-                System.err.println("Error: Missing required options.");
-                System.err.println();
-                printHelp(options);
-                System.exit(8);
-            }
-            
-            // Extract option values
-            url = cmd.getOptionValue("u");
-            String outputFile = cmd.getOptionValue("o");
-            String format = cmd.getOptionValue("f", DEFAULT_FORMAT);
-            int ccsid = DEFAULT_CCSID;
-            
-            // Parse CCSID if provided
-            if (cmd.hasOption("c")) {
-                try {
-                    ccsid = Integer.parseInt(cmd.getOptionValue("c"));
-                    validateCcsid(ccsid);
-                } catch (NumberFormatException e) {
-                    System.err.println("Error: Invalid CCSID value '" + cmd.getOptionValue("c") + "'. Must be an integer between 1 and 65535.");
-                    System.exit(8);
-                } catch (IllegalArgumentException e) {
-                    System.err.println("Error: " + e.getMessage());
-                    System.exit(8);
-                }
-            }
-            
-            // Determine whether to print headers (default is true, unless --no-headers is specified)
-            String printHeaders = cmd.hasOption("h") ? "N" : "Y";
+            // Set JDBC URL for connection
+            url = config.jdbcUrl;
             
             // Read SQL from stdin
             String sql = readFully(System.in);
             
             // Execute unload
-            long rowCount = unload(sql, outputFile, format, ccsid, printHeaders);
-            System.out.println("Successfully unloaded " + rowCount + " rows to " + outputFile);
+            long rowCount = unload(sql, config.outputFile, config.format, config.ccsid, config.printHeaders);
+            System.out.println("Successfully unloaded " + rowCount + " rows to " + config.outputFile);
             System.exit(0);
             
         } catch (ParseException e) {
             System.err.println("Error parsing command-line arguments: " + e.getMessage());
             System.err.println();
-            printHelp(options);
+            printHelp(createOptions());
+            System.exit(8);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error: " + e.getMessage());
             System.exit(8);
         } catch (IOException e) {
             System.err.println("I/O error: " + e.getMessage());

@@ -2,23 +2,23 @@
 -- REGULAR EXPRESSION FUNCTIONS
 -- =====================================================================
 -- SQL-based regular expression matching and replacement functions.
+-- This implementation uses the rather restricted Regex implementation
+-- of Db2 pureXML. The alternative Java-based implementation in
+-- RegexJava.sql provides more powerful features (e.g., named groups,
+-- lookbehind, backreferences, etc.).
 --
--- Features:
--- - regex_matches: Test if string matches pattern (returns 1/0)
--- - regex_replace: Replace pattern matches with replacement text
--- - Uses XQuery fn:matches and fn:replace for pattern matching
--- - Supports standard regex syntax
--- - NULL-safe operations
+-- WARNING:
+-- This implementation is extremely slow compared to the Java
+-- version, due to the dynamic prepare of the statement.
 --
 -- Functions:
 -- - REGEX_MATCHES(str, regex): Returns 1 if match, 0 otherwise, NULL if inputs NULL
--- - REGEX_REPLACE(str, regex): Replace matches with empty string
--- - REGEX_REPLACE(str, regex, replacement): Replace matches with specified text
 --
 -- Usage Examples:
--- - Email validation: SELECT REGEX_MATCHES('test@example.com', '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$') FROM SYSIBM.SYSDUMMYU
--- - Remove digits: SELECT REGEX_REPLACE('Hello123', '\d+') FROM SYSIBM.SYSDUMMYU
--- - Replace pattern: SELECT REGEX_REPLACE('Hello World', '(?i)world', 'Db2') FROM SYSIBM.SYSDUMMYU
+-- - Email validation: 
+--   SELECT REGEX_MATCHES('test@example.com', 
+--                        '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$') 
+--     FROM SYSIBM.SYSDUMMYU
 -- =====================================================================
 
 --<ScriptOptions statementTerminator="#"/>

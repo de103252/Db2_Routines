@@ -64,11 +64,9 @@ begin
     into utstmt
     from sysibm.systables
    where type = 'T'
-         -- and creator like schema_pattern
-         and regex_matches(creator, schema_pattern) = 1
+         and creator like schema_pattern
          and (   nullif(name_pattern, '') is null
-              -- or name like name_pattern
-              or regex_matches(name, name_pattern) = 1
+              or name like name_pattern
              );
   when 'DATABASE' then
   select 'LISTDEF RSLIST ' || 
@@ -94,7 +92,7 @@ end
 --<ScriptOptions statementTerminator=";"/>
 --#SET TERMINATOR ;
 
-select runstats('TABLES', 'DSN81310', '^(EMP|DEPT)$', '') 
+select runstats('TABLES', 'DSN81310', 'EMP%', '') 
   from sysibm.sysdummyu
 ;
 

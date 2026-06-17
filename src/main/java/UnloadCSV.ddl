@@ -1,12 +1,54 @@
+-- =====================================================================
+-- CSV DATA UNLOAD FUNCTIONS
+-- =====================================================================
+-- Export Db2 query results to CSV files with flexible formatting options.
+--
+-- Features:
+-- - Export query results directly to CSV files
+-- - Support for multiple predefined CSV formats (Excel, MySQL, Oracle, etc.)
+-- - Custom format configuration (delimiters, quotes, null handling)
+-- - CCSID conversion support for character encoding
+-- - Optional header row output
+-- - Parallel execution support
+-- - Continues after individual row failures
+--
+-- Functions:
+-- - unloadcsv(statement, filename): Basic CSV export with default format
+-- - unloadcsv(statement, filename, formatName, ccsid, printHeader): Advanced export with format control
+--
+-- Parameters:
+-- - statement: SQL SELECT statement to execute (up to 32704 characters)
+-- - filename: Target file path (Unix file system path)
+-- - formatName: CSV format name or custom format string (optional)
+-- - ccsid: Character set ID for output file (optional, e.g., 1208 for UTF-8)
+-- - printHeader: 'Y' to include column headers, 'N' to omit (optional)
+--
+-- Predefined Formats:
+-- - Default, Excel, InformixUnload, InformixUnloadCsv
+-- - MongoDBCsv, MongoDBTsv, MySQL, Oracle
+-- - PostgreSQLCsv, PostgreSQLText, RFC4180, TDF
+--
+-- Custom Format Options:
+-- - allowMissingColumnNames, commentMarker, delimiter, escape
+-- - headerComments, lenientEof, maxRows, nullString
+-- - quote, quoteMode (ALL, ALL_NON_NULL, MINIMAL, NON_NUMERIC, NONE)
+-- - recordSeparator, skipHeaderRecord, trailingData
+-- - trailingDelimiter, trim
+--
+-- Returns:
+-- - BIGINT: Number of rows exported
+--
+-- Usage Examples:
+-- - Basic export: SELECT unloadcsv('SELECT * FROM emp', '/tmp/emp.csv') FROM SYSIBM.SYSDUMMYU
+-- - With format: SELECT unloadcsv('SELECT * FROM emp', '/tmp/emp.csv', 'Excel', 1208, 'Y') FROM SYSIBM.SYSDUMMYU
+-- - Custom format: SELECT unloadcsv('SELECT * FROM emp', '/tmp/emp.csv', 'trim=true, quoteMode=NON_NUMERIC', 1208, 'Y') FROM SYSIBM.SYSDUMMYU
+-- =====================================================================
+
 -- Following comment lines tell Data Studio resp. SPUFI
 -- to use # as statement terminator
 --
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
-
-/*
- * Unload Db2 data in CSV format.
- */
 drop function UNLOADCSV(statement varchar(32704), filename varchar(32704)) ;
 
 /*
@@ -82,7 +124,8 @@ not deterministic;
 select unloadcsv('select * from dsn81310.emp', '/u/adcdmst/emp.csv')
   from sysibm.sysdummyu;
 
-with predef_formats(format) as (
+with
+predef_formats(format) as (
              select 'Default' from sysibm.sysdummyu 
    union all select 'Excel' from sysibm.sysdummyu 
    union all select 'InformixUnload' from sysibm.sysdummyu 
@@ -96,7 +139,11 @@ with predef_formats(format) as (
    union all select 'RFC4180' from sysibm.sysdummyu
    union all select 'TDF' from sysibm.sysdummyu
 )
-select unloadcsv('select * from dsn81310.emp', '/u/adcdmst/emp_' || format || '.csv', format, 1208, 1)
+select unloadcsv('select * from dsn81310.emp', 
+                 '/u/adcdmst/emp_' || format || '.csv', 
+                 format, 
+                 1208,
+                 1)
   from predef_formats;
 
 with cust_formats(format) as (

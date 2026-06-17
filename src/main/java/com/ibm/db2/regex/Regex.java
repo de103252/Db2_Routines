@@ -42,7 +42,7 @@ public class Regex {
             try {
                 p = Pattern.compile(regex);
             } catch (PatternSyntaxException e) {
-                throw new SQLException("Pattern syntax error: " + e.getMessage(), "10609", -16068);
+                throw new SQLException(e.getMessage(), "10609", -16068);
             }
             patternCache.put(regex, p);
         }

@@ -65,14 +65,14 @@ begin
                DISP(NEW,DELETE,DELETE) ' ||
                case when tmpspace is null 
                     then 'CYL'
-                    else 'SPACE(' || tmpspace || ',' || tmpspace || ') MB' 
+                    else 'SPACE(' || tmpspace || ',' || tmpspace || ') MB ' 
                end ||
   'TEMPLATE SO  DSN &US..TEMP.SORTOUT.&UQ.
                 DISP(NEW,DELETE,DELETE) ' ||
                case when tmpspace is null 
                     then 'CYL'
-                    else 'SPACE(' || tmpspace || ',' || tmpspace || ') MB' 
-               end ||
+                    else 'SPACE(' || tmpspace || ',' || tmpspace || ') MB ' 
+               end || ' ' ||
   'EXEC SQL                                               
      DECLARE C1 CURSOR FOR ' || sourceselect || ';     
    ENDEXEC  
@@ -232,10 +232,12 @@ begin
        where type = 'T' and creator = targetschema
   do             
     set count = count + 1;
-    set tmp_utility_output = utility_output;                                               
+    set tmp_utility_output = db2util.utility_output;                                               
     set maxrc = max(maxrc,                                     
                     CROSSLOAD(sourceschema, name, targetschema, name));
-    set utility_output = tmp_utility_output || utility_output || x'0a';                                            
+    set db2util.utility_output = tmp_utility_output 
+                              || db2util.utility_output 
+                              || x'0a';                                            
   end for;      
   return count;
 end
@@ -264,14 +266,15 @@ commit
 -- Test
 -----------------------------------------------------------------------
 
-create table emp like dsn81310.emp#
+create table emp like dsn81310.emp in database testuts;
 
 select crossload('select * from dsn81310.emp', 
                  current sqlid, 'EMP',
                  100) as rc
   from sysibm.sysdummyu
 #
-select utility_output
+
+select db2util.utility_output
   from sysibm.sysdummyu
 #
 

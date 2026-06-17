@@ -50,8 +50,8 @@ create function read_generic_file(filename varchar(54), flags integer)
 
 SELECT *
   FROM TABLE(READ_GENERIC_FILE('ADCDMST.FLATFILE.BIN', 0)) T (
-          id     char(8)         -- col 1
-       , name   char(35)         -- col 9
+         id     char(8)          -- col  1
+       , name   char(35)         -- col  9
        , int64  bigint           -- col 44
        , int32  INTEGER          -- col 52
        , int16  SMALLINT         -- col 56

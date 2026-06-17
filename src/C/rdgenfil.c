@@ -176,7 +176,7 @@ dynalloc_file(struct sqlchar *filename, char *sqlstate, char *msgtext)
     }
   } else {
     if (ip.__errcode == 528) {
-      sprintf(msgtext, "Data set %s in use", dsname);
+      sprintf(msgtext, "%s in use", dsname);
     } else {
       sprintf(msgtext, "Allocation error %x-%x", ip.__errcode,
           ip.__infocode);

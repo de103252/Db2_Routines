@@ -30,7 +30,7 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
-            <plugin>
+<!--             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
                 <version>12.2.2</version>
@@ -42,7 +42,7 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
+ -->            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>

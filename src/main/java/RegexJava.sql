@@ -96,5 +96,3 @@ select regex_replace('This is a very very very simple example',
                      '\b(\w+)(?:\W+\1\b)+',
                      '$1')
                      from sysibm.sysdummyu; 
-
--- Made with Bob

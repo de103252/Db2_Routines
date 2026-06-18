@@ -22,8 +22,6 @@
 -- - Custom SELECT: SELECT crossload('SELECT COL1, COL2 FROM SCHEMA1.TABLE1 WHERE COL1 > 100', 'SCHEMA2', 'TABLE2', 50) FROM SYSIBM.SYSDUMMYU
 -- =====================================================================
 
---<ScriptOptions statementTerminator="#"/>
---#SET TERMINATOR #
 
 SET CURRENT SCHEMA = 'SYSFUN'#
 
@@ -40,6 +38,8 @@ drop function crossload(sourceselect varchar(32704),
                         targettable varchar(128), 
                         tmpspace integer)#
                         
+--<ScriptOptions statementTerminator="#"/>
+--#SET TERMINATOR #
 
 /*
  * Copy table contents from one table to another.

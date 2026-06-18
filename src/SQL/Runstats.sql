@@ -59,8 +59,8 @@ begin
                                      '."' || 
                                      name || '"')) 
                           as clob) 
-          || ' RUNSTATS TABLESPACE LIST RSLIST TABLE'
-          || coalesce(nullif(statement, ''), ' USE PROFILE SORTDEVT SYSALLDA')
+          || ' RUNSTATS TABLESPACE LIST RSLIST TABLE '
+          || coalesce(nullif(statement, ''), 'USE PROFILE SORTDEVT SYSALLDA')
     into utstmt
     from sysibm.systables
    where type = 'T'
@@ -75,8 +75,8 @@ begin
          else
          'INCLUDE ' || schema_pattern || '.' || name_pattern
          end ||
-         ' RUNSTATS TABLESPACE LIST RSLIST TABLE'
-          || coalesce(nullif(statement, ''), ' USE PROFILE SORTDEVT SYSALLDA')
+         ' RUNSTATS TABLESPACE LIST RSLIST TABLE '
+          || coalesce(nullif(statement, ''), 'USE PROFILE SORTDEVT SYSALLDA')
     into utstmt
     from sysibm.sysdatabase
    where name = schema_pattern;
@@ -92,7 +92,7 @@ end
 --<ScriptOptions statementTerminator=";"/>
 --#SET TERMINATOR ;
 
-select runstats('TABLES', 'DSN81310', 'EMP%', '') 
+select runstats('TABLES', 'DSN81310', 'EMP%', '')
   from sysibm.sysdummyu
 ;
 

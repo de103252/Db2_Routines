@@ -213,7 +213,7 @@ public class Json {
      * @throws IOException if CLOB reading fails
      * @throws JSONException if the input is not valid JSON
      */
-    public static Clob prettyPrintJsonClob(Clob jsonClob)
+    public static Clob prettyPrintJsonClob(Clob jsonClob, int indentFactor)
             throws SQLException, IOException {
         
         // Input validation
@@ -240,7 +240,7 @@ public class Json {
         String jsonContent = readContents(jsonClob);
         
         // Pretty-print JSON
-        String formattedJson = prettyPrintJson(jsonContent);
+        String formattedJson = prettyPrintJson(jsonContent, indentFactor);
         
         // Create result CLOB and write formatted content using try-with-resources
         Clob resultClob = conn.createClob();

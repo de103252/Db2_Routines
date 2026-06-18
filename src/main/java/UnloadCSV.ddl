@@ -146,12 +146,17 @@ select unloadcsv('select * from dsn81310.emp',
                  1)
   from predef_formats;
 
-with cust_formats(format) as (
-             select 'trim=true, quoteMode=NON_NUMERIC, nullString=(nix)' from sysibm.sysdummyu 
+with
+cust_formats(format) as (
+  select 'trim=true, quoteMode=NON_NUMERIC, nullString=(nix)' from sysibm.sysdummyu 
 )
 select unloadcsv('select * from dsn81310.emp', '/u/adcdmst/emp_' || row_number() over() || '.csv', format, 1208, 1)
   from cust_formats;
 
-select unloadcsv('select * from dsn81310.emp', '//emp.csv', 'Excel', 1208, 'Y')
+-- Unload to a sequential file in two different encodings
+select unloadcsv('select * from dsn81310.emp', 
+                 '//emp.csv.utf8', 'Excel', 1208, 'Y')
+     , unloadcsv('select * from dsn81310.emp', 
+                 '//emp.csv.e1141', 'Excel', 1141, 'Y')
   from sysibm.sysdummyu;
     

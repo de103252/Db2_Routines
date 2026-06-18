@@ -51,6 +51,7 @@ deterministic;
 drop function REGEX_REPLACE(str         varchar(32704), 
                             regex       varchar(32704), 
                             replacement varchar(32704));
+                            
 create function REGEX_REPLACE(str         varchar(32704), 
                               regex       varchar(32704), 
                               replacement varchar(32704)) 
@@ -73,11 +74,13 @@ with
 names as (
   select token from table(split('de.ibm.com,foo-bar,not\,a\,domain\,name'))
 )
-select token, regex_matches(token, '^([a-z][a-z0-9-]+(\.|-*\.))+[a-z]{2,6}$') matches
+select token, regex_matches(token, 
+'^([a-z][a-z0-9-]+(\.|-*\.))+[a-z]{2,6}$') matches
   from names;
 
 -- Performance check: Perform a match 1M times
-select sum(regex_matches('de.ibm.com', '^([a-z][a-z0-9-]+(\.|-*\.))+[a-z]{2,6}$')) matches
+select sum(regex_matches('de.ibm.com', 
+                         '^([a-z][a-z0-9-]+(\.|-*\.))+[a-z]{2,6}$')) matches
   from table(generate_series(1, 1000000));
 
 -- Turn X into U, case insensitive

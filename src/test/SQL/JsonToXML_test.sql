@@ -2,7 +2,7 @@
 -- Test Cases for JSON to XML Conversion and Formatting Functions
 -- =============================================================================
 -- This file contains demonstration and test queries for the JSON functions
--- defined in src/main/java/JsonToXML.sql
+-- defined in JsonToXML.sql
 --
 -- Functions tested:
 -- - JSON2XML: Converts JSON to XML format

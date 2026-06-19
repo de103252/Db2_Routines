@@ -95,18 +95,3 @@ create function update_sysparm(parameters varchar(32704))
   not deterministic
 return update_sysparm(cast(null as varchar(8)), cast(null as varchar(8)), parameters)
 #
-
-select update_sysparm('a.CTHREAD=b') from sysibm.sysdummyu#
-
-select update_sysparm('', '',
-  'DSN6SYSP.CTHREAD=666,' ||
-  'DSN6SPRM.TABLE_COL_NAME_EXPANSION=OFF'
-) from sysibm.sysdummyu#
-
-select update_sysparm('', '',
-  'DSN6SPRM.TABLE_COL_NAME_EXPANSION=OFF'
-) from sysibm.sysdummyu#
-
-select * from SYSIBM.SYSPARM_SETTINGS#
-
-select db2util.utility_output from sysibm.sysdummyu#

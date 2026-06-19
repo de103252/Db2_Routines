@@ -2,7 +2,7 @@
 -- Test Cases for GZip Compression and Decompression Functions
 -- =============================================================================
 -- This file contains demonstration and test queries for the GZIP functions
--- defined in src/main/java/GZip.sql
+-- defined in GZip.sql
 --
 -- Functions tested:
 -- - GZIP: Compresses BLOB data using GZIP compression

@@ -2,7 +2,7 @@
 -- Test Cases for FORMATTIMESTAMP Functions
 -- =============================================================================
 -- This file contains demonstration and test queries for the FORMATTIMESTAMP
--- functions defined in src/main/java/DateFormat.sql
+-- functions defined in DateFormat.sql
 --
 -- Functions tested:
 -- - FORMATTIMESTAMP(timestamp, format): Format with default locale
@@ -73,4 +73,3 @@ locales(locale) as (
 select locale, formattimestamp(current timestamp, 'EEEE, d MMMM yyyy HH:mm:ss', locale) as today
   from locales;
 
--- Made with Bob

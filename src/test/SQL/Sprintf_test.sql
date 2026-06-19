@@ -2,7 +2,7 @@
 -- Test Cases for SPRINTF Functions
 -- =============================================================================
 -- This file contains demonstration and test queries for the SPRINTF functions
--- defined in src/main/java/Sprintf.sql
+-- defined in Sprintf.sql
 --
 -- Functions tested:
 -- - SPRINTF(format, packed_data): Format with default locale

@@ -119,22 +119,3 @@ end#
 comment on function sysfun.submit(jcl clob ccsid unicode)
 is 'Submit a job stream and return the job output'
 #
-
-
-
-with job(jcl) as (
-select '
-//TEST JOB ,NOTIFY=&SYSUID
-//DISPL  EXEC PGM=IEFBR14'
-  from sysibm.sysdummyu
-)
-select submit(jcl) as sysout
-  from job
-#
-
-select *
-  from table(submit_t('
-//TEST JOB ,NOTIFY=&SYSUID
-//DISPL  EXEC PGM=IEFBR14'))
-#
-

@@ -2,7 +2,7 @@
 -- Test Cases for Regular Expression Functions
 -- =============================================================================
 -- This file contains demonstration and test queries for the regex functions
--- defined in src/main/java/RegexJava.sql
+-- defined in RegexJava.sql
 --
 -- Functions tested:
 -- - REGEX_MATCHES: Matches a regular expression against a string

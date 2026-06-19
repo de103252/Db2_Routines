@@ -10,9 +10,7 @@
 
         <!-- Db2 Deployment Configuration Properties -->
         <!-- These can be overridden via command line: -Ddb2.host=myhost -->
-        <db2.host></db2.host>
-        <db2.port></db2.port>
-        <db2.database></db2.database>
+        <db2.url></db2.url>
         <db2.user></db2.user>
         <db2.password></db2.password>
         <db2.jar.id></db2.jar.id>
@@ -69,6 +67,65 @@
                             </archive>
 
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <!-- SQL Maven Plugin for executing DDL files -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>sql-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                
+                <dependencies>
+                    <dependency>
+                        <groupId>com.ibm.db2</groupId>
+                        <artifactId>jcc</artifactId>
+                        <version>12.1.4.0</version>
+                    </dependency>
+                </dependencies>
+                
+                <configuration>
+                    <driver>com.ibm.db2.jcc.DB2Driver</driver>
+                    <url>${db2.url}</url>
+                    <username>${db2.user}</username>
+                    <password>${db2.password}</password>
+                    <delimiter>#</delimiter>
+                    <delimiterType>normal</delimiterType>
+                    <keepFormat>true</keepFormat>
+                    <orderFile>ascending</orderFile>
+                    <autocommit>true</autocommit>
+                    <onError>abort</onError>
+                    <srcFiles>
+                        <srcFile>src/main/SQL/Command.sql</srcFile>
+                        <srcFile>src/main/SQL/Crossload.sql</srcFile>
+                        <srcFile>src/main/SQL/DeployJar.sql</srcFile>
+                        <srcFile>src/main/SQL/Easter.sql</srcFile>
+                        <srcFile>src/main/SQL/GenerateSeries.sql</srcFile>
+                        <srcFile>src/main/SQL/GroupMembers.sql</srcFile>
+                        <srcFile>src/main/SQL/HexToInt.sql</srcFile>
+                        <srcFile>src/main/SQL/ProfileTrigger.sql</srcFile>
+                        <srcFile>src/main/SQL/RegexSQL.sql</srcFile>
+                        <srcFile>src/main/SQL/Runstats.sql</srcFile>
+                        <srcFile>src/main/SQL/SetClientInfo.sql</srcFile>
+                        <srcFile>src/main/SQL/Split.sql</srcFile>
+                        <srcFile>src/main/SQL/Submit.sql</srcFile>
+                        <srcFile>src/main/SQL/ToRoman.sql</srcFile>
+                        <srcFile>src/main/SQL/TryInteger.sql</srcFile>
+                        <srcFile>src/main/SQL/UpdateSysparm.sql</srcFile>
+                        <srcFile>src/main/SQL/Utility.sql</srcFile>
+                        <srcFile>src/main/SQL/ValidateConversion.sql</srcFile>
+                        <srcFile>src/main/SQL/ValidateEAN.sql</srcFile>
+                    </srcFiles>
+                </configuration>
+                
+                <executions>
+                    <execution>
+                        <id>execute-ddl</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -152,7 +209,7 @@
                                     <mainClass>com.ibm.db2.deploy.Deploy</mainClass>
                                     <arguments>
                                         <argument>--jdbc-url</argument>
-                                        <argument>jdbc:db2://${db2.host}:${db2.port}/${db2.database}</argument>
+                                        <argument>${db2.url}</argument>
                                         <argument>--user</argument>
                                         <argument>${db2.user}</argument>
                                         <argument>--password</argument>

@@ -51,14 +51,16 @@ The following table shows an overview of all functions:
 |xref::gzip[GZIP]       |P    |Data types    |Compresses BLOB data using GZIP compression.                     |Java
 |xref::gzip[GUNZIP]     |P    |Data types    |Decompresses GZIP-compressed BLOB data.                          |Java
 |<<HEXTOINT>>           |S    |Data types    |Converts a hex string to integer.                                |SQL
-|xref::json2xml[JSON2XML]|S   |Data types    |Converts JSON data to XML format.                                |Java
+|xref::json2xml[JSON2XML]|S   |Text and JSON |Converts JSON data to XML format as native XML type.             |Java
+|xref::json2xml[JSON2XMLC]|S  |Text and JSON |Converts JSON data to XML format as character string.            |Java
+|<<JSON_PRETTY_PRINT>>  |S    |Text and JSON |Formats JSON with configurable indentation for readability.      |Java
 |<<RACFPROFILE>>        |S    |System        |Returns the RACF profile that covers the input data set name.    |COBOL
 |<<READ_GENERIC_FILE>>  |T    |System        |Reads records from a flat file and returns them as a table.      |C
-|<<REGEX_MATCHES>>      |S    |Strings       |Matches a regular expression against a string.                   |Java or SQL
-|<<REGEX_REPLACE>>      |S    |Strings       |Replaces regular expression matches within a string.             |Java
+|<<REGEX_MATCHES>>      |S    |Text and JSON |Matches a regular expression against a string.                   |Java or SQL
+|<<REGEX_REPLACE>>      |S    |Text and JSON |Replaces regular expression matches within a string.             |Java
 |<<RUNSTATS>>           |S    |Utilities     |Runs statistics against a table or a set of tables.              |SQL
-|<<SPLIT>>              |T    |Text          |Tokenizes a comma-separated string (inverse of LISTAGG).         |SQL
-|<<SPRINTF>>            |T    |Text          |Formats one or more values according to a Java-style
+|<<SPLIT>>              |T    |Text and JSON |Tokenizes a comma-separated string (inverse of LISTAGG).         |SQL
+|<<SPRINTF>>            |T    |Text and JSON |Formats one or more values according to a Java-style
                                               format string.                                                   |Java
 |xref::submit[SUBMIT]   |S    |Utilities     |Submits a JCL job stream and returns the job output as a CLOB.   |SQL
 |xref::submit[SUBMIT_T] |T    |Utilities     |Submits a JCL job stream and returns the job output as a table.  |SQL
@@ -68,7 +70,6 @@ TRY_SMALLINT +
 TRY_BIGINT]
                         |S    |Data types    |Returns text converted to an integer or NULL on failure.         |SQL
 |<<UNLOADCSV>>          |S    |Utilities     |Unloads query results to CSV files.                              |Java
-|<<UPDATE_SYSPARM>>     |S    |System        |Updates Db2 system parameters dynamically.                       |SQL
 |<<VALIDATE_CONVERSION>> |T   |Data types    |Tests whether a given character string can be converted
                                               to a specified target type.                                      |SQL
 |===
@@ -1031,20 +1032,53 @@ select to_roman(year(current date))
 ....
 
 [[json2xml]]
+=== JSON2XMLC
+
+Converts JSON data to XML format as a character string.
+
+[sql,subs="quotes"]
+----
+json2xmlc(_json_)
+----
+
+json:: A JSON string (VARCHAR(32704) or CLOB(32M)) to be converted to XML.
+
+The function converts JSON data to XML format and returns it as a character string (VARCHAR(32704) or CLOB(32M)). This is the underlying implementation function used by [`json2xml`](#json2xml).
+
+Returns a character string containing the XML representation of the JSON data.
+
+If called with a null input, returns the null value.
+
+.Example: Converting JSON to XML string
+[sql]
+----
+select json2xmlc('{"customer": {"id": 101, "name": "Alice"}}')
+  from sysibm.sysdummyu;
+----
+
+.Result:
+----
+<customer><id>101</id><name>Alice</name></customer>
+----
+
+NOTE: This function is implemented as a Java external function using the `com.ibm.db2.json.Json` class. It is deterministic and allows parallel execution.
+
 === JSON2XML
 
-Converts JSON data to XML format.
+Converts JSON data to XML format as a native XML type.
 
 [sql,subs="quotes"]
 ----
 json2xml(_json_)
 ----
 
-json:: A JSON string (VARCHAR or CLOB) to be converted to XML.
+json:: A JSON string (VARCHAR(32704) or CLOB(32M)) to be converted to XML.
 
-The function converts JSON data to XML format, making it possible to use [`XMLTABLE`](https://www.ibm.com/docs/en/db2-for-zos/13?topic=functions-xmltable) to extract data from JSON in relational format. This is particularly useful on Db2 for z/OS which does not have a native JSON_TABLE function.
+The function converts JSON data to XML format and returns it as a native XML type, making it possible to use [`XMLTABLE`](https://www.ibm.com/docs/en/db2-for-zos/13?topic=functions-xmltable) to extract data from JSON in relational format. This is particularly useful on Db2 for z/OS which does not have a native JSON_TABLE function.
 
-Returns an XML string representation of the JSON data.
+This function wraps [`json2xmlc`](#json2xmlc) with `XMLPARSE` to return a parsed XML type ready for use with XMLTABLE queries.
+
+Returns an XML type representation of the JSON data.
 
 If called with a null input, returns the null value.
 
@@ -1071,6 +1105,7 @@ with x(jsonx) as (
     "customer": {
       "id": 101,
       "name": "Alice",
+      "isActive": true,
       "orders": [
         {"orderId": "A-555", "items": ["Laptop", "Mouse"]},
         {"orderId": "B-777", "items": ["Monitor"]}
@@ -1078,23 +1113,95 @@ with x(jsonx) as (
     }
   }') from sysibm.sysdummyu
 )
-select customer_id, orderId, item
-  from x, xmltable('customer/orders/items' passing xmlparse(jsonx)
-                columns customer_id integer     path '../../id'
-                      , orderId     varchar(8)  path '../orderId'
-                      , item        varchar(32) path '.');
+select customer_id, customer_is_active, orderId, item
+  from x, xmltable('customer/orders/items' passing jsonx
+                columns customer_id        integer     path '../../id'
+                      , customer_is_active integer     path 'xs:boolean(../../isActive)'
+                      , orderId            varchar(8)  path '../orderId'
+                      , item               varchar(32) path '.');
 ----
 
 .Result:
 [options="header,autowidth"]
 |===
-|CUSTOMER_ID|ORDERID|ITEM
-|101        |A-555  |Laptop
-|101        |A-555  |Mouse
-|101        |B-777  |Monitor
+|CUSTOMER_ID|CUSTOMER_IS_ACTIVE|ORDERID|ITEM
+|101        |1                 |A-555  |Laptop
+|101        |1                 |A-555  |Mouse
+|101        |1                 |B-777  |Monitor
 |===
 
-NOTE: The function uses Java's JSON processing libraries and is deterministic.
+NOTE: The function is implemented as a SQL function that wraps xref:json2xmlc[`JSON2XMLC`] with `XMLPARSE`.
+
+=== JSON_PRETTY_PRINT
+
+Formats JSON data with configurable indentation for improved readability.
+
+[sql,subs="quotes"]
+----
+json_pretty_print(_json_, _indent_)
+----
+
+json:: A JSON string (VARCHAR(32704) or CLOB(32M)) to be formatted.
+indent:: An integer specifying the number of spaces to use for indentation (typically 2 or 4).
+
+The function takes compact or unformatted JSON and returns it with proper indentation and line breaks, making it easier to read and debug. This is particularly useful when working with JSON data stored in database columns or returned from external APIs.
+
+Returns a formatted JSON string with the specified indentation.
+
+If called with a null input, returns the null value.
+
+.Example 1: Format compact JSON with 2-space indentation
+[sql]
+----
+select json_pretty_print('{"customer":{"id":101,"name":"Alice"}}', 2)
+  from sysibm.sysdummyu;
+----
+
+.Result:
+----
+{
+  "customer": {
+    "id": 101,
+    "name": "Alice"
+  }
+}
+----
+
+.Example 2: Format complex JSON with 4-space indentation
+[sql]
+----
+select json_pretty_print(
+  '{"customer":{"id":101,"name":"Alice","isActive":true,"orders":[{"orderId":"A-555","items":["Laptop","Mouse"]},{"orderId":"B-777","items":["Monitor"]}]}}',
+  4
+) from sysibm.sysdummyu;
+----
+
+.Result:
+----
+{
+    "customer": {
+        "id": 101,
+        "name": "Alice",
+        "isActive": true,
+        "orders": [
+            {
+                "orderId": "A-555",
+                "items": [
+                    "Laptop",
+                    "Mouse"
+                ]
+            },
+            {
+                "orderId": "B-777",
+                "items": [
+                    "Monitor"
+                ]
+            }
+        ]
+    }
+}
+----
+
 
 == CSV Export
 
@@ -1147,7 +1254,6 @@ select unloadcsv('select * from dsn81310.emp',
   from sysibm.sysdummyu;
 ----
 
-NOTE: The function uses the Java WLM environment and requires the Apache Commons CSV library in the classpath.
 
 == Reading flat files as tables
 
@@ -1171,7 +1277,7 @@ function, including sequential files (fixed or variable), PDS(E) members
 
 Here is an example of a SELECT statement using the UDF:
 
-.Example
+.READ_GENERIC_FILE example
 [source,sql]
 ....
 SELECT *

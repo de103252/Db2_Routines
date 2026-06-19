@@ -174,31 +174,6 @@ create function sysfun.base64encode (data varbinary(24528))
 ;
 
 -- =============================================================================
--- Usage Examples
--- =============================================================================
-
--- Example 1: Basic encoding - encode text to Base64
-SELECT base64encode(cast('Uli Seelbach' as blob)) from sysibm.sysdummyu;
-
--- Example 2: Encoding NULL values
-SELECT base64encode(cast(null as blob)) from sysibm.sysdummyu;
-
--- Example 3: Basic decoding - decode Base64 back to binary
-SELECT base64decode('VWxpIFNlZWxiYWNo') from sysibm.sysdummyu;
-
--- SELECT interpret(base64decode('VWxpIFNlZWxiYWNo') as char(12)) from sysibm.sysdummyu;
-
--- Example 4: Encoding multiple concatenated values
--- This example demonstrates encoding a list of table names
-with t100 as (
-  select name from sysibm.systables fetch first 100 rows only
-),
-t as (
-  select listagg(name) names from t100
-)
-select length(names), length(base64encode(varbinary(names))) from t
-
--- =============================================================================
 -- Notes:
 -- - All functions return NULL when given NULL input
 -- - The functions are deterministic and can be used in parallel execution
@@ -208,3 +183,5 @@ select length(names), length(base64encode(varbinary(names))) from t
 -- See Also:
 -- - Java implementation: com/ibm/db2/base64/Base64.java
 -- =============================================================================
+
+-- Made with Bob

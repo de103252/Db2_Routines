@@ -55,28 +55,6 @@ asutime no limit
 continue after failure
 deterministic; 
 
-with p(p) as (
- select pack(ccsid 1208, 
-             current timestamp
-            ) from sysibm.sysdummyu
-)
-select sprintf('it', '%1$tB', p) as Result from p;
-
-select sprintf('de', '%-20s %-20s: %ta, %<td.%<tm.%<tY: %,09.2f', 
-               pack(ccsid 1208, lastname, firstnme, birthdate, salary))
-  from dsn81310.emp;
-  
-select    char(lastname, 20)
-       || ' ' 
-       || char(firstnme, 20) 
-       || ': '
-       || decode(dayofweek_iso(birthdate), 1, 'Mon', 2, 'Tue', 3, 'Wed', 4, 'Thu', 5, 'Fri', 6, 'Sat', 7, 'Sun')
-       || ', ' 
-       || varchar_format(birthdate, 'DD.MM.YYYY')
-       || ': '
-       || varchar_format(salary, '000000.00')
-  from dsn81310.emp;
-  
 create function SSCANF(format varchar(32704), data varchar(32704)) 
 returns varbinary(32704)
 external name
@@ -88,4 +66,6 @@ allow parallel
 wlm environment DBDGENVJ 
 asutime no limit 
 continue after failure
-deterministic; 
+deterministic;
+
+-- Made with Bob

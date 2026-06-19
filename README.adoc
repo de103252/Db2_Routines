@@ -117,9 +117,7 @@ To build and deploy the Java stored procedures, activate the `db2-deploy` Maven 
 [source,bash]
 ----
 mvn clean install -Pdb2-deploy \
-  -Ddb2.host=your-mainframe-host \
-  -Ddb2.port=5045 \
-  -Ddb2.database=YOUR_DATABASE \
+  -Ddb2.url=jdbc:db2://your-mainframe-host:5045/YOUR_DATABASE \
   -Ddb2.user=your-username \
   -Ddb2.password=your-password \
   -Ddb2.jar.id=YOUR_SCHEMA.ROUTINES \
@@ -131,9 +129,7 @@ For Windows systems using Command Prompt, use `^` for line continuation:
 [source,cmd]
 ----
 mvn clean install -Pdb2-deploy ^
-  -Ddb2.host=your-mainframe-host ^
-  -Ddb2.port=5045 ^
-  -Ddb2.database=YOUR_DATABASE ^
+  -Ddb2.url=jdbc:db2://your-mainframe-host:5045/YOUR_DATABASE ^
   -Ddb2.user=your-username ^
   -Ddb2.password=your-password ^
   -Ddb2.jar.id=YOUR_SCHEMA.ROUTINES ^
@@ -148,17 +144,9 @@ The deployment process uses the following configuration properties:
 |===
 |Property |Description |Example Value
 
-|`db2.host`
-|Hostname or IP address of the Db2 for z/OS system
-|`mainframe.company.com`
-
-|`db2.port`
-|JDBC port number for Db2 connectivity
-|`5045`
-
-|`db2.database`
-|Db2 database location name
-|`DALLASD`
+|`db2.url`
+|JDBC connection URL for Db2 for z/OS. Format: `jdbc:db2://host:port/database`
+|`jdbc:db2://mainframe.company.com:5045/DALLASD`
 
 |`db2.user`
 |Db2 user ID with deployment privileges
@@ -177,6 +165,7 @@ The deployment process uses the following configuration properties:
 |`DBDGENVJ`
 |===
 
+
 ==== Configuration Methods
 
 You can configure deployment properties using several approaches:
@@ -188,7 +177,7 @@ Pass properties directly on the command line:
 [source,bash]
 ----
 mvn clean install -Pdb2-deploy \
-  -Ddb2.host=mainframe.company.com \
+  -Ddb2.url=jdbc:db2://mainframe.company.com:5045/DALLASD \
   -Ddb2.user=myuser \
   -Ddb2.password=mypassword
 ----
@@ -204,9 +193,7 @@ Create or edit `~/.m2/settings.xml` (Linux/Mac) or `%USERPROFILE%\.m2\settings.x
     <profile>
       <id>db2-dev</id>
       <properties>
-        <db2.host>dev-mainframe.company.com</db2.host>
-        <db2.port>5045</db2.port>
-        <db2.database>DEVDB</db2.database>
+        <db2.url>jdbc:db2://dev-mainframe.company.com:5045/DEVDB</db2.url>
         <db2.user>devuser</db2.user>
         <db2.password>dev_password</db2.password>
         <db2.jar.id>DEVSCHEMA.ROUTINES</db2.jar.id>
@@ -217,9 +204,7 @@ Create or edit `~/.m2/settings.xml` (Linux/Mac) or `%USERPROFILE%\.m2\settings.x
     <profile>
       <id>db2-prod</id>
       <properties>
-        <db2.host>prod-mainframe.company.com</db2.host>
-        <db2.port>5045</db2.port>
-        <db2.database>PRODDB</db2.database>
+        <db2.url>jdbc:db2://prod-mainframe.company.com:5045/PRODDB</db2.url>
         <db2.user>produser</db2.user>
         <db2.password>${env.DB2_PROD_PASSWORD}</db2.password>
         <db2.jar.id>PRODSCHEMA.ROUTINES</db2.jar.id>
@@ -237,7 +222,7 @@ Then deploy using:
 mvn clean install -Pdb2-deploy,db2-dev
 ----
 
-A template settings file is provided in link:settings.xml.template[`settings.xml.template`].
+A template settings file is provided in link:deployment/settings.xml.template[`deployment/settings.xml.template`].
 
 ===== 3. Environment Variables (Recommended for CI/CD)
 
@@ -245,12 +230,12 @@ Set environment variables and reference them in the Maven command:
 
 [source,bash]
 ----
-export DB2_HOST=mainframe.company.com
+export DB2_URL=jdbc:db2://mainframe.company.com:5045/DALLASD
 export DB2_USER=myuser
 export DB2_PASSWORD=mypassword
 
 mvn clean install -Pdb2-deploy \
-  -Ddb2.host=${DB2_HOST} \
+  -Ddb2.url=${DB2_URL} \
   -Ddb2.user=${DB2_USER} \
   -Ddb2.password=${DB2_PASSWORD}
 ----
@@ -270,6 +255,80 @@ When you execute the Maven deployment command, the following automated workflow 
 
 2. *Package Phase*
    - Creates a JAR file with all dependencies: `target/routines.jar`
+==== Migration from Legacy Configuration
+
+If you are upgrading from a previous version that used separate `db2.host`, `db2.port`, and `db2.database` parameters, you need to consolidate these into a single `db2.url` parameter.
+
+===== Converting Legacy Parameters to JDBC URL
+
+The new `db2.url` parameter uses standard JDBC URL format:
+
+[source]
+----
+jdbc:db2://hostname:port/database
+----
+
+*Example conversion:*
+
+.Legacy Configuration (Deprecated)
+[source,xml]
+----
+<db2.host>mainframe.company.com</db2.host>
+<db2.port>5045</db2.port>
+<db2.database>DALLASD</db2.database>
+----
+
+.New Configuration
+[source,xml]
+----
+<db2.url>jdbc:db2://mainframe.company.com:5045/DALLASD</db2.url>
+----
+
+===== Migration Checklist
+
+When migrating to the new configuration format:
+
+1. *Update Maven settings.xml:* Replace the three separate properties (`db2.host`, `db2.port`, `db2.database`) with a single `db2.url` property
+2. *Update command-line scripts:* Change `-Ddb2.host=... -Ddb2.port=... -Ddb2.database=...` to `-Ddb2.url=jdbc:db2://host:port/database`
+3. *Update CI/CD pipelines:* Replace separate environment variables with a single `DB2_URL` variable
+4. *Verify connection strings:* Ensure the JDBC URL format is correct with proper protocol, hostname, port, and database name
+5. *Test deployment:* Run a test deployment to verify the new configuration works correctly
+
+===== JDBC URL Format Reference
+
+The JDBC URL for Db2 for z/OS follows this structure:
+
+[source]
+----
+jdbc:db2://hostname:port/location
+----
+
+Where:
+
+* `hostname` - The hostname or IP address of the Db2 for z/OS system
+* `port` - The JDBC/DRDA port number (typically 5045 or 446)
+* `location` - The Db2 location name (database identifier)
+
+Additional connection properties can be appended as URL parameters:
+
+[source]
+----
+jdbc:db2://hostname:port/location:property1=value1;property2=value2;
+----
+
+Common optional properties include:
+
+* `currentSchema` - Set the default schema for unqualified table names
+* `retrieveMessagesFromServerOnGetMessage` - Enable detailed error messages
+* `securityMechanism` - Specify authentication mechanism (e.g., 9 for encrypted password)
+
+Example with additional properties:
+
+[source]
+----
+jdbc:db2://mainframe.company.com:5045/DALLASD:currentSchema=MYSCHEMA;
+----
+
    - Includes all required libraries (JSON, Apache Commons, etc.)
    - Configures the JAR manifest with proper classpath entries
 
@@ -318,7 +377,8 @@ Database connection closed.
 
 *Solutions:*
 
-* Verify the hostname and port are correct
+* Verify the JDBC URL format is correct: `jdbc:db2://hostname:port/database`
+* Ensure the hostname, port, and database name in the URL are accurate
 * Test network connectivity: `ping your-mainframe-host`
 * Ensure firewall rules allow JDBC connections on the specified port
 * Confirm the Db2 subsystem is active and accepting connections
@@ -366,15 +426,19 @@ CALL SQLJ.REMOVE_JAR('SCHEMA.JARNAME', 0);
 *Solutions:*
 
 * Verify the WLM environment name is correct (case-sensitive)
-* Check that the WLM environment is defined in Db2:
+* Check that the WLM environment is defined and active in z/OS Workload Manager
+* Verify WLM environment is registered with Db2:
 +
 [source,sql]
 ----
-SELECT * FROM SYSIBM.SYSWLMENV WHERE NAME = 'YOUR_WLM_ENV';
+SELECT DISTINCT WLM_ENVIRONMENT
+FROM SYSIBM.SYSROUTINES
+WHERE WLM_ENVIRONMENT = 'YOUR_WLM_ENV';
 ----
 
 * Ensure the user has authority to refresh WLM environments
-* Verify the WLM environment is started and available
+* Verify the WLM environment is started and available in z/OS
+* Contact your system administrator to confirm WLM environment configuration
 
 ===== Maven Not Found (Windows)
 

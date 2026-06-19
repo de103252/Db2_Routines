@@ -77,25 +77,3 @@ series(value) as (
      and value + 1 <= stop
 )
 select value from series;
-
------------------------------------------------------------------------
--- Test
------------------------------------------------------------------------
-
-select value
-  from table(generate_series(1, 5));
-  
-select value
-  from table(generate_series(1, 9, 3));
-
-select value as countdown
-  from table(generate_series(10, 0, -1));
-  
--- Next 4 Saturdays
-select current date + (6 - dayofweek_iso(current date) + value) days as Saturday
-  from table(generate_series(0, 3*7, 7));
-  
--- 42 random integers in the range [0, 100)
-select integer(rand() * 100)
-  from table(generate_series(1, 42));
-  

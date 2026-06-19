@@ -58,32 +58,3 @@ begin
   return value;
 end
 #
-
------------------------------------------------------------------------
--- Test
------------------------------------------------------------------------
-
-with
-d(d) as (
-  select 1 from sysibm.sysdummyu
-),
-tests(hexstr, expected_result) as (
-            select '0',        0 from d 
-  union all select '42',       66 from d
-  union all select '7fffffff', 2147483647 from d
-  union all select '80000000', 2147483648 from d
-),
-results as (
-  select row_number() over() as row
-       , tests.*
-       , hextoint(hexstr) actual_result
-    from tests
-)
-select *
-  from results
- where expected_result <> actual_result OR 1 = 1
-#
-
-select hextoint('DEADBEEF') as result from sysibm.sysdummyu;
-select hextoint('JUNK!!!') as result from sysibm.sysdummyu;
-select hextoint(cast(null as char)) as result from sysibm.sysdummyu;

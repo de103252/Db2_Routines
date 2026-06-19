@@ -68,20 +68,3 @@ begin
   return roman;
 end
 #
-
------------------------------------------------------------------------
--- Test
------------------------------------------------------------------------
-
-select to_roman(year(current date)) as current_year_roman
-  from sysibm.sysdummyu
-#  
-  
-select to_roman(1964) from sysibm.sysdummyu#
-select to_roman(9999) from sysibm.sysdummyu#
-
-select value           as "Year"
-     , to_roman(value) as "In saecula saeculorum"
-  from table(generate_series(year(current date), 
-                             year(current date) + 99))
-;

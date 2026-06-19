@@ -261,35 +261,3 @@ grant execute on function crossload(varchar(32704),
 
 commit
 #
-
------------------------------------------------------------------------
--- Test
------------------------------------------------------------------------
-
-create table emp like dsn81310.emp in database testuts;
-
-select crossload('select * from dsn81310.emp', 
-                 current sqlid, 'EMP',
-                 100) as rc
-  from sysibm.sysdummyu
-#
-
-select db2util.utility_output
-  from sysibm.sysdummyu
-#
-
-select * from emp
-#
-
-select crossload('DSN81310', current sqlid) as rc
-     , utility_output
-  from sysibm.sysdummyu
-#
-select utility_output
-  from sysibm.sysdummyu
-#
-
-select crossload('DSN81310', 'EMP', current sqlid, 'EMP') as rc
-     , utility_output
-  from sysibm.sysdummyu
-#

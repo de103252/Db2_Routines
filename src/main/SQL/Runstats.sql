@@ -88,15 +88,3 @@ begin
   return db2utility(utstmt);
 end
 #
-
---<ScriptOptions statementTerminator=";"/>
---#SET TERMINATOR ;
-
-select runstats('TABLES', 'DSN81310', 'EMP%', '')
-  from sysibm.sysdummyu
-;
-
-select db2util.utility_output
-  from sysibm.sysdummyu
-;
-

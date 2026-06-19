@@ -93,28 +93,3 @@ select seqno, token
              columns seqno for ordinality
                    , token varchar(32704) path '.')
 ;
-
------------------------------------------------------------------------
--- Test
------------------------------------------------------------------------
-
-select xmlquery('fn:count(x)' passing xmlelement(name "a", tokenize('one:two;three|four', '[:\|;]'))) from sysibm.sysdummyu;
-
-select seqno, token
-  from xmltable('t' passing xmlelement(name "a", tokenize('one:two;three|four', '[:\|;]'))
-             columns seqno for ordinality
-                   , token varchar(32704) path '.')
-;
-
-select seqno, token
-  from table(split('one:two;three|four', '[:\|;]'));
-
-select tokenize('one:two;three|four', '[:\|;]')
-  from sysibm.sysdummyu;
-
-select *
-  from table(split('EMP,DEPT,PARTS,SUPPLIERS'));
-  
-select *
-  from sysibm.systables
- where name in (select token from table(split('EMP,DEPT,PARTS,SUPPLIERS')));

@@ -22,21 +22,27 @@
 -- - Custom SELECT: SELECT crossload('SELECT COL1, COL2 FROM SCHEMA1.TABLE1 WHERE COL1 > 100', 'SCHEMA2', 'TABLE2', 50) FROM SYSIBM.SYSDUMMYU
 -- =====================================================================
 
+--<ScriptOptions statementTerminator="#"/>
+--#SET TERMINATOR #
 
-SET CURRENT SCHEMA = 'SYSFUN'#
+SET CURRENT SCHEMA = 'SYSFUN'
+#
 
 drop function crossload(sourceschema varchar(128),
-                        targetschema varchar(128))#     
+                        targetschema varchar(128))
+#     
 
 drop function crossload(sourceschema varchar(128), 
                         sourcetable  varchar(128), 
                         targetschema varchar(128), 
-                        targettable  varchar(128))#
+                        targettable  varchar(128))
+#
 
 drop function crossload(sourceselect varchar(32704), 
                         targetschema varchar(128),
                         targettable varchar(128), 
-                        tmpspace integer)#
+                        tmpspace integer)
+#
                         
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #

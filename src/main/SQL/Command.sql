@@ -24,15 +24,31 @@
 --<ScriptOptions statementTerminator="#"/>
 --#SET TERMINATOR #
 
-set current schema = SYSFUN#
+set current schema = SYSFUN
+#
+
+drop function db2command(command varchar(32704))
+#
+
+drop function db2command(command         varchar(32704), 
+                         db2_member      varchar(8))
+#
+
+drop function db2command(command         varchar(32704), 
+                         db2_member      varchar(8),
+                         processing_type varchar(3))
+#
+
+drop variable db2util.command_output
+#
 
 -- Global variable to hold output from a utility invocation.
-create variable db2util.command_output clob(4M)#
+create variable db2util.command_output clob(4M)
+#
 
-drop function db2command(command varchar(32704))#
-drop function db2command(command varchar(32704), db2_member varchar(8), processing_type varchar(3))#
-
-create function db2command(db2_command varchar(32704), db2_member varchar(8), processing_type varchar(3))
+create function db2command(db2_command     varchar(32704), 
+                           db2_member      varchar(8),
+                           processing_type varchar(3))
   returns clob
   modifies sql data
   not deterministic
@@ -64,6 +80,7 @@ begin
     set result = result || line || x'0a';
   end for;          
 
+  set db2util.command_output = result;
   return result;
   
 end
